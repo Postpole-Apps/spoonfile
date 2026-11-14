@@ -14,7 +14,10 @@ import com.postpole.spoonfile.billing.BillingGateway
 import com.postpole.spoonfile.billing.BillingRepository
 import com.postpole.spoonfile.billing.PlayBillingGateway
 import com.postpole.spoonfile.data.AppDatabase
+import com.postpole.spoonfile.data.CategoryDao
 import com.postpole.spoonfile.data.ItemDao
+import com.postpole.spoonfile.data.RecipeDao
+import com.postpole.spoonfile.data.ShoppingDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -36,6 +39,15 @@ object AppModule {
 
     @Provides
     fun provideItemDao(db: AppDatabase): ItemDao = db.itemDao()
+
+    @Provides
+    fun provideRecipeDao(db: AppDatabase): RecipeDao = db.recipeDao()
+
+    @Provides
+    fun provideCategoryDao(db: AppDatabase): CategoryDao = db.categoryDao()
+
+    @Provides
+    fun provideShoppingDao(db: AppDatabase): ShoppingDao = db.shoppingDao()
 
     @Provides
     @Singleton
