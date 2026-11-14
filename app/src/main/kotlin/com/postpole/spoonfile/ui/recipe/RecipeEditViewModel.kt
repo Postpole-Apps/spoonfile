@@ -1,5 +1,6 @@
 package com.postpole.spoonfile.ui.recipe
 
+import android.os.Bundle
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.lifecycle.SavedStateHandle
@@ -72,7 +73,7 @@ sealed interface RecipeEditEvent {
 
 @HiltViewModel
 class RecipeEditViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
+    private val savedStateHandle: SavedStateHandle,
     private val repository: RecipeRepository,
     private val categoryDao: CategoryDao,
     private val billing: BillingRepository,
@@ -85,7 +86,10 @@ class RecipeEditViewModel @Inject constructor(
     private var existing: RecipeEntity? = null
     private var originalImage: String? = null
 
-    private val _form = MutableStateFlow(RecipeEditForm(loaded = recipeId == 0L))
+    /** Unsaved draft restored after process death, if any. */
+    private val restoredDraft: RecipeEditForm? = savedStateHandle.get<Bundle>(DRAFT_KEY)?.toForm()
+
+    private val _form = MutableStateFlow(restoredDraft ?: RecipeEditForm(loaded = recipeId == 0L))
     val form: StateFlow<RecipeEditForm> = _form
 
     val categories: StateFlow<List<CategoryEntity>> = categoryDao.observeAllWithCounts()
@@ -96,6 +100,10 @@ class RecipeEditViewModel @Inject constructor(
     val events: Flow<RecipeEditEvent> = _events.receiveAsFlow()
 
     init {
+        // Keep the draft in SavedStateHandle so it survives process death.
+        viewModelScope.launch {
+            _form.collect { if (it.loaded) savedStateHandle[DRAFT_KEY] = it.toBundle() }
+        }
         if (recipeId != 0L) {
             viewModelScope.launch {
                 val details = repository.observeDetails(recipeId).first()
@@ -106,6 +114,10 @@ class RecipeEditViewModel @Inject constructor(
                 val r = details.recipe
                 existing = r
                 originalImage = r.imageFile
+                if (restoredDraft != null) {
+                    _form.update { it.copy(loaded = true) }
+                    return@launch
+                }
                 _form.value = RecipeEditForm(
                     title = r.title,
                     description = r.description.orEmpty(),
@@ -225,6 +237,47 @@ class RecipeEditViewModel @Inject constructor(
         }
     }
 
+    private companion object {
+        const val DRAFT_KEY = "edit_draft"
+    }
+
     private fun formatNumber(value: Double): String =
         if (value == value.toLong().toDouble()) value.toLong().toString() else value.toString()
 }
+
+private fun RecipeEditForm.toBundle() = Bundle().apply {
+    putString("title", title)
+    putString("description", description)
+    putString("servings", servings)
+    putString("prep", prepMinutes)
+    putString("cook", cookMinutes)
+    putString("total", totalMinutes)
+    putString("ingredients", ingredients)
+    putString("steps", steps)
+    putString("notes", notes)
+    putString("nutrition", nutrition)
+    putString("sourceName", sourceName)
+    putString("sourceUrl", sourceUrl)
+    putString("image", imageFile)
+    putInt("rating", rating)
+    putLongArray("categories", categoryIds.toLongArray())
+}
+
+private fun Bundle.toForm() = RecipeEditForm(
+    title = getString("title").orEmpty(),
+    description = getString("description").orEmpty(),
+    servings = getString("servings").orEmpty(),
+    prepMinutes = getString("prep").orEmpty(),
+    cookMinutes = getString("cook").orEmpty(),
+    totalMinutes = getString("total").orEmpty(),
+    ingredients = getString("ingredients").orEmpty(),
+    steps = getString("steps").orEmpty(),
+    notes = getString("notes").orEmpty(),
+    nutrition = getString("nutrition").orEmpty(),
+    sourceName = getString("sourceName").orEmpty(),
+    sourceUrl = getString("sourceUrl").orEmpty(),
+    imageFile = getString("image"),
+    rating = getInt("rating").coerceIn(0, 5),
+    categoryIds = getLongArray("categories")?.toSet().orEmpty(),
+    loaded = true,
+)

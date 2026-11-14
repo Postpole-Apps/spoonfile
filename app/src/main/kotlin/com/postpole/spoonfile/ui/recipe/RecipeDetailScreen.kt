@@ -172,8 +172,8 @@ fun RecipeDetailScreen(
                     ExtendedFloatingActionButton(
                         onClick = { onCook(details.recipe.id) },
                         shape = ExtendedFabShape,
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.height(64.dp),
                         icon = { Icon(painterResource(R.drawable.ic_skillet), contentDescription = null) },
                         text = { Text(stringResource(R.string.detail_cook_mode), style = MaterialTheme.typography.titleMedium) },
@@ -235,7 +235,7 @@ private fun DetailContent(state: RecipeDetailUiState, viewModel: RecipeDetailVie
         }
         item {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(recipe.title, style = MaterialTheme.typography.headlineLarge)
+                Text(recipe.title, style = MaterialTheme.typography.displayMedium)
                 if (recipe.rating > 0) {
                     val cd = stringResource(R.string.detail_rating_stars, recipe.rating)
                     Text(

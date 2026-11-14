@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -66,7 +67,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.postpole.spoonfile.R
@@ -271,7 +271,7 @@ private fun RecipeGrid(
         item(span = full) {
             Text(
                 stringResource(R.string.recipes_title),
-                style = MaterialTheme.typography.displayMedium.copy(fontSize = 50.sp, lineHeight = 56.sp),
+                style = MaterialTheme.typography.displayLarge,
             )
         }
         item(span = full) {
@@ -347,12 +347,27 @@ private fun CategoryTiles(state: RecipeListUiState, onSelect: (Long?) -> Unit, o
         }
         if (state.showSeeAll) {
             item(key = "see_all") {
-                CategoryTile(
-                    label = stringResource(R.string.categories_see_all),
-                    shape = shapes[state.visibleCategories.size % shapes.size],
-                    selected = false,
+                Surface(
                     onClick = onSeeAll,
-                )
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(96.dp),
+                ) {
+                    Column(
+                        Modifier.fillMaxSize().padding(8.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Icon(painterResource(R.drawable.ic_grid), contentDescription = null)
+                        Text(
+                            stringResource(R.string.categories_see_all),
+                            style = MaterialTheme.typography.labelLarge,
+                            textAlign = TextAlign.Center,
+                            maxLines = 1,
+                        )
+                    }
+                }
             }
         }
     }

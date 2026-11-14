@@ -65,6 +65,7 @@ import com.postpole.spoonfile.ui.theme.CookBackgroundLight
 import com.postpole.spoonfile.ui.theme.CookTextDark
 import com.postpole.spoonfile.ui.theme.CookTextLight
 import com.postpole.spoonfile.ui.theme.SpoonfilePolygons
+import com.postpole.spoonfile.ui.theme.SpoonfileText
 import kotlinx.coroutines.launch
 
 /** One cook-mode page: a step plus the section header (if any) it falls under. */
@@ -169,7 +170,7 @@ private fun CookPager(
                     modifier = Modifier.size(120.dp),
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Text(item.number.toString(), fontSize = 48.sp, fontWeight = FontWeight.Bold)
+                        Text(item.number.toString(), style = SpoonfileText.cookStepNumber)
                     }
                 }
                 item.section?.let {
