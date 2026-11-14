@@ -3,6 +3,8 @@ package com.postpole.spoonfile.data
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -27,7 +29,7 @@ class RecipeRepositoryTest {
             .allowMainThreadQueries()
             .build()
         imageDir = File(context.cacheDir, "images-test-${System.nanoTime()}").also { it.mkdirs() }
-        repo = RecipeRepository(db.recipeDao(), ImageStore(imageDir))
+        repo = RecipeRepository(db.recipeDao(), ImageStore(imageDir), Dispatchers.Unconfined)
     }
 
     @After
@@ -105,5 +107,39 @@ class RecipeRepositoryTest {
         repo.upsertWithChildren(recipe.copy(id = id, imageFile = "new.jpg"), emptyList(), emptyList(), emptyList())
 
         assertFalse(old.exists())
+    }
+
+    private suspend fun add(title: String, favorite: Boolean = false, rating: Int = 0, ingredient: String? = null) =
+        repo.upsertWithChildren(
+            RecipeEntity(uid = title, title = title, favorite = favorite, rating = rating, createdAt = 1, updatedAt = 1),
+            listOfNotNull(ingredient?.let { IngredientEntity(position = 0, text = it) }),
+            emptyList(),
+            emptyList(),
+        )
+
+    @Test
+    fun favoritesOnly_filtersList() = runBlocking {
+        add("Soup", favorite = true)
+        add("Salad")
+        val all = repo.observeList().first().map { it.title }
+        val favs = repo.observeList(favoritesOnly = true).first().map { it.title }
+        assertEquals(setOf("Soup", "Salad"), all.toSet())
+        assertEquals(listOf("Soup"), favs)
+    }
+
+    @Test
+    fun search_treatsLikeWildcardsLiterally() = runBlocking {
+        add("100% juice")
+        add("Plain")
+        add("a_b", ingredient = "1 cup x")
+        assertEquals(listOf("100% juice"), repo.observeList(query = "%").first().map { it.title })
+        assertEquals(listOf("a_b"), repo.observeList(query = "_").first().map { it.title })
+        assertEquals(emptyList<String>(), repo.observeList(query = "\\").first().map { it.title })
+    }
+
+    @Test
+    fun rating_isClampedTo0to5() = runBlocking {
+        val id = add("Rated", rating = 9)
+        assertEquals(5, repo.observeDetails(id).first()!!.recipe.rating)
     }
 }

@@ -15,9 +15,9 @@ abstract class RecipeDao {
     @Query(
         """
         SELECT * FROM recipes
-        WHERE (:query = '' OR title LIKE '%' || :query || '%'
+        WHERE (:query = '' OR title LIKE '%' || :query || '%' ESCAPE '\'
             OR EXISTS (SELECT 1 FROM recipe_ingredients
-                       WHERE recipeId = recipes.id AND text LIKE '%' || :query || '%'))
+                       WHERE recipeId = recipes.id AND text LIKE '%' || :query || '%' ESCAPE '\'))
           AND (:categoryId IS NULL OR id IN
                (SELECT recipeId FROM recipe_categories WHERE categoryId = :categoryId))
           AND (:favoritesOnly = 0 OR favorite = 1)
@@ -58,6 +58,12 @@ abstract class RecipeDao {
 
     @Query("DELETE FROM recipes WHERE id = :id")
     abstract suspend fun delete(id: Long)
+
+    @Query("UPDATE recipes SET favorite = :favorite WHERE id = :id")
+    abstract suspend fun setFavorite(id: Long, favorite: Boolean)
+
+    @Query("UPDATE recipes SET rating = :rating WHERE id = :id")
+    abstract suspend fun setRating(id: Long, rating: Int)
 
     @Insert
     protected abstract suspend fun insertRecipe(recipe: RecipeEntity): Long

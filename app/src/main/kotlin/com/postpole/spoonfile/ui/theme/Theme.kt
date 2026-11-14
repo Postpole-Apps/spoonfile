@@ -5,6 +5,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
 // Spoonfile, seed #8E6BD1 (Direction 4 Expressive Pastel). No Material You dynamic colour.
@@ -93,15 +95,20 @@ val CookTextLight = Color(0xFF260059) // onPrimaryContainer
 val CookBackgroundDark = Color(0xFF000000) // pure black: screen stays on (OLED)
 val CookTextDark = Color(0xFFEBDDFF)
 
+/** True when the app (per the Theme setting from Settings) is rendering in dark mode. */
+val LocalDarkTheme = staticCompositionLocalOf { false }
+
 @Composable
 fun SpoonfileTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
-    MaterialTheme(
-        colorScheme = if (darkTheme) SpoonfileDarkColors else SpoonfileLightColors,
-        typography = SpoonfileTypography,
-        shapes = SpoonfileShapes,
-        content = content,
-    )
+    CompositionLocalProvider(LocalDarkTheme provides darkTheme) {
+        MaterialTheme(
+            colorScheme = if (darkTheme) SpoonfileDarkColors else SpoonfileLightColors,
+            typography = SpoonfileTypography,
+            shapes = SpoonfileShapes,
+            content = content,
+        )
+    }
 }

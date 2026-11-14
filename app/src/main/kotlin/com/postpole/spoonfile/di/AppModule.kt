@@ -13,6 +13,7 @@ import com.postpole.spoonfile.review.ReviewPrompter
 import com.postpole.spoonfile.billing.BillingGateway
 import com.postpole.spoonfile.billing.BillingRepository
 import com.postpole.spoonfile.billing.PlayBillingGateway
+import com.postpole.spoonfile.billing.ProStatus
 import com.postpole.spoonfile.data.AppDatabase
 import com.postpole.spoonfile.data.CategoryDao
 import com.postpole.spoonfile.data.ItemDao
@@ -23,10 +24,16 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import javax.inject.Qualifier
 import javax.inject.Singleton
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class IoDispatcher
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -36,6 +43,10 @@ object AppModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, "app.db").build()
+
+    @Provides
+    @IoDispatcher
+    fun provideIoDispatcher(): CoroutineDispatcher = Dispatchers.IO
 
     @Provides
     fun provideItemDao(db: AppDatabase): ItemDao = db.itemDao()
@@ -66,6 +77,11 @@ object AppModule {
         scope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
         analytics = analytics,
     )
+
+    @Provides
+    fun provideProStatus(billing: BillingRepository): ProStatus = object : ProStatus {
+        override val isPro = billing.isPro
+    }
 
     @Provides
     @Singleton
