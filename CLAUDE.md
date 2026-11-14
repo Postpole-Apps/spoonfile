@@ -2,6 +2,8 @@
 
 This repo is the shared starter for small, offline Android apps built by Postpole Apps. Every new app is created from it.
 
+This repository is the Spoonfile app (`com.postpole.spoonfile`), started from that template.
+
 ## Rules
 - Work only on the issue you were given. One issue = one branch `issue-<number>` = one PR to `main`. Never push to `main`, never force-push, never merge.
 - Kotlin + Jetpack Compose (Material 3), single-activity, Hilt, Room, DataStore, Coroutines/Flow. minSdk 26, compileSdk/targetSdk 36. Google Play Billing Library 8+ (prefer latest 9.x).
