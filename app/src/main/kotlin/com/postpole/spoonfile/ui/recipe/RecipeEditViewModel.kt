@@ -89,7 +89,11 @@ class RecipeEditViewModel @Inject constructor(
     /** Unsaved draft restored after process death, if any. */
     private val restoredDraft: RecipeEditForm? = savedStateHandle.get<Bundle>(DRAFT_KEY)?.toForm()
 
-    private val _form = MutableStateFlow(restoredDraft ?: RecipeEditForm(loaded = recipeId == 0L))
+    // For an existing recipe the form stays not-loaded (Save disabled, photo/discard no-ops) until the
+    // row has been read, even when a draft is restored: `existing` and `originalImage` come from the database.
+    private val _form = MutableStateFlow(
+        restoredDraft?.copy(loaded = recipeId == 0L) ?: RecipeEditForm(loaded = recipeId == 0L),
+    )
     val form: StateFlow<RecipeEditForm> = _form
 
     val categories: StateFlow<List<CategoryEntity>> = categoryDao.observeAllWithCounts()
@@ -163,6 +167,7 @@ class RecipeEditViewModel @Inject constructor(
     }
 
     fun onPhotoPicked(open: () -> InputStream?) {
+        if (!_form.value.loaded) return
         viewModelScope.launch {
             val saved = repository.savePhotoFrom(open)
             if (saved == null) {
@@ -175,6 +180,7 @@ class RecipeEditViewModel @Inject constructor(
     }
 
     fun removePhoto() {
+        if (!_form.value.loaded) return
         viewModelScope.launch {
             discardUnsavedPhoto()
             _form.update { it.copy(imageFile = null) }
@@ -190,13 +196,15 @@ class RecipeEditViewModel @Inject constructor(
     }
 
     private suspend fun discardUnsavedPhoto() {
+        // Not loaded yet: originalImage is unknown, so never delete anything.
+        if (!_form.value.loaded) return
         val current = _form.value.imageFile
         if (current != null && current != originalImage) repository.deleteImage(current)
     }
 
     fun save() {
         val f = _form.value
-        if (f.saving) return
+        if (f.saving || !f.loaded) return
         if (f.title.isBlank()) {
             _form.update { it.copy(titleError = true) }
             return
