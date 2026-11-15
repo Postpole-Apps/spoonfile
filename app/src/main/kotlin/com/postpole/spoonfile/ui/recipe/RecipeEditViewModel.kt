@@ -64,6 +64,33 @@ data class RecipeEditForm(
     val saving: Boolean = false,
 )
 
+/** Copies the form's fields onto [base] (shared by the edit screen and the web import preview). */
+internal fun RecipeEditForm.applyTo(base: RecipeEntity, now: Long): RecipeEntity {
+    val servingsValue = servings.trim().replace(',', '.').toDoubleOrNull()?.takeIf { it > 0 }
+    return base.copy(
+        title = title.trim(),
+        description = description.trim().ifEmpty { null },
+        servings = servingsValue,
+        servingsText = if (servingsValue == null) servings.trim().ifEmpty { null } else null,
+        prepMinutes = prepMinutes.trim().toIntOrNull(),
+        cookMinutes = cookMinutes.trim().toIntOrNull(),
+        totalMinutes = totalMinutes.trim().toIntOrNull(),
+        notes = notes.trim().ifEmpty { null },
+        nutritionText = nutrition.trim().ifEmpty { null },
+        sourceName = sourceName.trim().ifEmpty { null },
+        sourceUrl = sourceUrl.trim().ifEmpty { null },
+        imageFile = imageFile,
+        rating = rating.coerceIn(0, 5),
+        updatedAt = now,
+    )
+}
+
+internal fun RecipeEditForm.ingredientEntities(): List<IngredientEntity> =
+    parseLines(ingredients).map { (t, h) -> IngredientEntity(position = 0, text = t, isHeader = h) }
+
+internal fun RecipeEditForm.stepEntities(): List<StepEntity> =
+    parseLines(steps).map { (t, h) -> StepEntity(position = 0, text = t, isHeader = h) }
+
 sealed interface RecipeEditEvent {
     /** Saved; [showReview] is true when the Play review prompt should be offered. */
     data class Saved(val id: Long, val showReview: Boolean) : RecipeEditEvent
@@ -219,26 +246,7 @@ class RecipeEditViewModel @Inject constructor(
             }
             val now = System.currentTimeMillis()
             val base = existing ?: RecipeEntity(uid = UUID.randomUUID().toString(), title = "", createdAt = now, updatedAt = now)
-            val servingsValue = f.servings.trim().replace(',', '.').toDoubleOrNull()?.takeIf { it > 0 }
-            val recipe = base.copy(
-                title = f.title.trim(),
-                description = f.description.trim().ifEmpty { null },
-                servings = servingsValue,
-                servingsText = if (servingsValue == null) f.servings.trim().ifEmpty { null } else null,
-                prepMinutes = f.prepMinutes.trim().toIntOrNull(),
-                cookMinutes = f.cookMinutes.trim().toIntOrNull(),
-                totalMinutes = f.totalMinutes.trim().toIntOrNull(),
-                notes = f.notes.trim().ifEmpty { null },
-                nutritionText = f.nutrition.trim().ifEmpty { null },
-                sourceName = f.sourceName.trim().ifEmpty { null },
-                sourceUrl = f.sourceUrl.trim().ifEmpty { null },
-                imageFile = f.imageFile,
-                rating = f.rating.coerceIn(0, 5),
-                updatedAt = now,
-            )
-            val ingredients = parseLines(f.ingredients).map { (t, h) -> IngredientEntity(position = 0, text = t, isHeader = h) }
-            val steps = parseLines(f.steps).map { (t, h) -> StepEntity(position = 0, text = t, isHeader = h) }
-            val id = repository.upsertWithChildren(recipe, ingredients, steps, f.categoryIds.toList())
+            val id = repository.upsertWithChildren(f.applyTo(base, now), f.ingredientEntities(), f.stepEntities(), f.categoryIds.toList())
             originalImage = f.imageFile
             val showReview = review.recordPositiveAction()
             _events.trySend(RecipeEditEvent.Saved(id, showReview))

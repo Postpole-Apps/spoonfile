@@ -11,6 +11,9 @@ object AnalyticsEvents {
     const val PURCHASE_RESTORED = "purchase_restored"
     const val BACKUP_EXPORTED = "backup_exported"
     const val BACKUP_IMPORTED = "backup_imported"
+
+    /** Params: [AnalyticsParams.IMPORT_SOURCE] and [AnalyticsParams.RESULT] only. Never a URL, domain or recipe text. */
+    const val RECIPE_IMPORT = "recipe_import"
 }
 
 object AnalyticsParams {
@@ -20,6 +23,8 @@ object AnalyticsParams {
     const val ITEM_ID = "item_id"
     const val ITEM_COUNT = "item_count"
     const val FORMAT = "format"
+    const val IMPORT_SOURCE = "import_source"
+    const val RESULT = "result"
 }
 
 /**

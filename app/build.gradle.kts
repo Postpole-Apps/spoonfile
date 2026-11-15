@@ -156,9 +156,12 @@ dependencies {
     implementation(libs.firebase.crashlytics)
     implementation(libs.play.review)
     implementation(libs.play.app.update)
+    implementation(libs.okhttp)
+    implementation(libs.jsoup)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(libs.junit)
+    testImplementation(libs.okhttp.mockwebserver)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
