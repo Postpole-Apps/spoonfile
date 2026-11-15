@@ -156,11 +156,16 @@ dependencies {
     implementation(libs.firebase.crashlytics)
     implementation(libs.play.review)
     implementation(libs.play.app.update)
+    implementation(libs.okhttp)
+    implementation(libs.jsoup)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
+    testImplementation(libs.okhttp.mockwebserver)
+    // Real org.json on the JVM so parser tests do not hit the android.jar stubs.
+    testImplementation(libs.org.json)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.test.ext.junit)
 }

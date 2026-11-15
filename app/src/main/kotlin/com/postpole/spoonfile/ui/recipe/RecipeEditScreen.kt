@@ -222,7 +222,7 @@ fun RecipeEditScreen(
 }
 
 @Composable
-private fun Field(
+internal fun Field(
     value: String,
     label: Int,
     modifier: Modifier = Modifier,

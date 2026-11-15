@@ -1,5 +1,6 @@
 package com.postpole.spoonfile.ui
 
+import android.net.Uri
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -13,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -24,12 +26,16 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.postpole.spoonfile.R
+import com.postpole.spoonfile.ui.importer.ImportLinkScreen
 import com.postpole.spoonfile.ui.pro.ProScreen
 import com.postpole.spoonfile.ui.recipe.CookModeScreen
 import com.postpole.spoonfile.ui.recipe.RecipeDetailScreen
 import com.postpole.spoonfile.ui.recipe.RecipeEditScreen
 import com.postpole.spoonfile.ui.recipes.RecipeListScreen
 import com.postpole.spoonfile.ui.settings.SettingsScreen
+
+/** A web link shared into the app. [nonce] makes sharing the same link twice a new request. */
+data class SharedLink(val url: String, val nonce: Long = System.nanoTime())
 
 object Routes {
     const val RECIPES = "recipes"
@@ -45,21 +51,33 @@ object Routes {
 
     // Stub destinations, filled in by later issues.
     const val SHOPPING = "shopping"
-    const val IMPORT_LINK = "import/link"
     const val SCAN = "import/scan"
     const val IMPORT_FILE = "import/file"
 
+    /** Import from a web link; an optional `url` starts the import straight away (share intent). */
+    const val IMPORT_LINK = "import/link?url={url}"
+
+    fun importLink(url: String = "") = "import/link?url=${Uri.encode(url)}"
     fun recipe(id: Long) = "recipe/$id"
     fun cook(id: Long) = "recipe/$id/cook"
     fun edit(id: Long = 0L) = "recipe-edit?id=$id"
 }
 
 private val idArg = listOf(navArgument("id") { type = NavType.LongType })
-private val optionalIdArg = listOf(navArgument("id") { type = NavType.LongType; defaultValue = 0L })
+private val urlArg = listOf(navArgument("url") { type = NavType.StringType; defaultValue = "" })
+private val optionalIdArg =listOf(navArgument("id") { type = NavType.LongType; defaultValue = 0L })
 
 @Composable
-fun AppNavHost(onScreen: (String) -> Unit = {}) {
+fun AppNavHost(onScreen: (String) -> Unit = {}, sharedLink: SharedLink? = null) {
     val navController = rememberNavController()
+    LaunchedEffect(sharedLink) {
+        // A link shared into the app opens the importer, replacing any importer already open.
+        if (sharedLink != null) {
+            navController.navigate(Routes.importLink(sharedLink.url)) {
+                popUpTo(Routes.IMPORT_LINK) { inclusive = true }
+            }
+        }
+    }
     DisposableEffect(navController) {
         val listener = NavController.OnDestinationChangedListener { _, destination, _ ->
             destination.route?.let(onScreen)
@@ -73,7 +91,7 @@ fun AppNavHost(onScreen: (String) -> Unit = {}) {
             RecipeListScreen(
                 onOpenRecipe = { navController.navigate(Routes.recipe(it)) },
                 onNewRecipe = { navController.navigate(Routes.edit()) },
-                onPasteLink = { navController.navigate(Routes.IMPORT_LINK) },
+                onPasteLink = { navController.navigate(Routes.importLink()) },
                 onScanPage = { navController.navigate(Routes.SCAN) },
                 onImportFile = { navController.navigate(Routes.IMPORT_FILE) },
                 onOpenShopping = { navController.navigate(Routes.SHOPPING) },
@@ -115,7 +133,21 @@ fun AppNavHost(onScreen: (String) -> Unit = {}) {
             ProScreen(onBack = { navController.popBackStack() })
         }
         composable(Routes.SHOPPING) { StubScreen(R.string.nav_shopping_list, R.string.shopping_stub) { navController.popBackStack() } }
-        composable(Routes.IMPORT_LINK) { StubScreen(R.string.stub_paste_link, R.string.stub_coming_soon) { navController.popBackStack() } }
+        composable(Routes.IMPORT_LINK, arguments = urlArg) {
+            ImportLinkScreen(
+                onBack = { navController.popBackStack() },
+                onOpenRecipe = { id ->
+                    navController.navigate(Routes.recipe(id)) { popUpTo(Routes.IMPORT_LINK) { inclusive = true } }
+                },
+                onSaved = { id ->
+                    navController.navigate(Routes.recipe(id)) { popUpTo(Routes.IMPORT_LINK) { inclusive = true } }
+                },
+                onOpenPro = { openPro() },
+                onTypeItIn = {
+                    navController.navigate(Routes.edit()) { popUpTo(Routes.IMPORT_LINK) { inclusive = true } }
+                },
+            )
+        }
         composable(Routes.SCAN) { StubScreen(R.string.stub_scan, R.string.stub_coming_soon) { navController.popBackStack() } }
         composable(Routes.IMPORT_FILE) { StubScreen(R.string.stub_import_file, R.string.stub_coming_soon) { navController.popBackStack() } }
     }

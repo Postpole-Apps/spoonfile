@@ -61,7 +61,6 @@
     <string name="add_import_file">Import recipe file</string>
     <string name="add_import_file_hint">Recipe file from another app</string>
     <string name="add_privacy">Your recipes stay on your device</string>
-    <string name="stub_paste_link">Paste link</string>
     <string name="stub_scan">Scan a page</string>
     <string name="stub_import_file">Import recipe file</string>
     <string name="stub_coming_soon">This part is on its way.</string>
@@ -174,4 +173,36 @@
     <string name="update_ready_message">A new version has been downloaded. Restart to finish installing it.</string>
     <string name="update_restart">Restart</string>
     <string name="update_later">Later</string>
+
+    <!-- Import from link -->
+    <string name="import_link_title">Import from a link</string>
+    <string name="import_link_hint">Paste a link to a recipe page. The page is read on this phone, and nothing is saved until you confirm.</string>
+    <string name="import_link_field">Recipe link</string>
+    <string name="import_link_invalid">That doesn\'t look like a web link. It should start with http:// or https://</string>
+    <string name="import_link_go">Import</string>
+    <string name="import_link_clipboard">Use the link you copied (%1$s)</string>
+    <string name="import_loading">Reading the page…</string>
+    <string name="import_loading_cd">Importing recipe</string>
+    <string name="import_cancel">Cancel</string>
+    <string name="import_failed_title">This page didn\'t load</string>
+    <string name="import_failed_body">Nothing was saved.</string>
+    <string name="import_failed_body_site">Nothing was saved. %1$s didn\'t respond in time or blocked the request.</string>
+    <string name="import_retry">Retry</string>
+    <string name="import_too_big_body">This page is too big to read. Nothing was saved.</string>
+    <string name="import_no_recipe_title">No recipe found on this page</string>
+    <string name="import_no_recipe_body">This page doesn\'t share its recipe in a form we can read. You can still add it yourself.</string>
+    <string name="import_no_recipe_paste">Open the page and copy the text</string>
+    <string name="import_no_recipe_type">Type it in</string>
+    <string name="import_paste_field">Paste the recipe text here</string>
+    <string name="import_paste_use">Use this text</string>
+    <string name="import_duplicate_title">You already have this recipe</string>
+    <string name="import_duplicate_saved">Saved %1$s</string>
+    <string name="import_duplicate_open">Open</string>
+    <string name="import_duplicate_copy">Save copy</string>
+    <string name="import_preview_title">Import preview</string>
+    <string name="import_preview_source">Source: %1$s</string>
+    <string name="import_preview_categories">Suggested categories</string>
+    <string name="import_preview_categories_hint">Tap the ones you want. None are added unless you pick them.</string>
+    <string name="import_preview_photo_missing">No photo found</string>
+    <string name="import_save_failed">Couldn\'t save the recipe. Nothing was saved.</string>
 </resources>
