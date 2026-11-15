@@ -29,6 +29,21 @@ open class ImageStore(private val dir: File) {
         return saveBitmap(decoded)
     }
 
+    /** Decodes the stored photo [name] downsampled so its long edge is about [maxEdge] px; null if missing/unreadable. */
+    open fun decode(name: String, maxEdge: Int): Bitmap? {
+        val file = resolve(name)
+        if (!file.exists()) return null
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(file.path, bounds)
+        var sample = 1
+        var edge = max(bounds.outWidth, bounds.outHeight)
+        while (edge / 2 >= maxEdge) {
+            sample *= 2
+            edge /= 2
+        }
+        return BitmapFactory.decodeFile(file.path, BitmapFactory.Options().apply { inSampleSize = sample })
+    }
+
     open fun saveBitmap(bitmap: Bitmap): String {
         val scaled = downsample(bitmap)
         dir.mkdirs()

@@ -54,6 +54,27 @@ class RecipeDaoTest {
     }
 
     @Test
+    fun favoritesOnly_filtersToFavorites() = runBlocking {
+        dao.upsertWithChildren(recipe("Plain"), emptyList(), emptyList(), emptyList())
+        dao.upsertWithChildren(recipe("Loved").copy(favorite = true), emptyList(), emptyList(), emptyList())
+
+        val favorites = dao.observeList("", null, true, RecipeSort.RECENT).first().map { it.title }
+        assertEquals(listOf("Loved"), favorites)
+        assertEquals(2, dao.observeList("", null, false, RecipeSort.RECENT).first().size)
+    }
+
+    @Test
+    fun likeWildcards_areMatchedLiterallyWhenEscaped() = runBlocking {
+        dao.upsertWithChildren(recipe("100% juice"), listOf(ing("snake_case")), emptyList(), emptyList())
+        dao.upsertWithChildren(recipe("Salad"), listOf(ing("lettuce")), emptyList(), emptyList())
+
+        fun search(q: String) = dao.observeList(RecipeRepository.escapeLike(q), null, false, RecipeSort.RECENT)
+        assertEquals(listOf("100% juice"), search("%").first().map { it.title })
+        assertEquals(listOf("100% juice"), search("_").first().map { it.title })
+        assertEquals(emptyList<String>(), search("\\").first().map { it.title })
+    }
+
+    @Test
     fun sort_azAndRating() = runBlocking {
         dao.upsertWithChildren(recipe("banana", rating = 5, updatedAt = 1), emptyList(), emptyList(), emptyList())
         dao.upsertWithChildren(recipe("Apple", rating = 1, updatedAt = 2), emptyList(), emptyList(), emptyList())

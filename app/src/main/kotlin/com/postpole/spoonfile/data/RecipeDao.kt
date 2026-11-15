@@ -15,9 +15,9 @@ abstract class RecipeDao {
     @Query(
         """
         SELECT * FROM recipes
-        WHERE (:query = '' OR title LIKE '%' || :query || '%'
+        WHERE (:query = '' OR title LIKE '%' || :query || '%' ESCAPE '\'
             OR EXISTS (SELECT 1 FROM recipe_ingredients
-                       WHERE recipeId = recipes.id AND text LIKE '%' || :query || '%'))
+                       WHERE recipeId = recipes.id AND text LIKE '%' || :query || '%' ESCAPE '\'))
           AND (:categoryId IS NULL OR id IN
                (SELECT recipeId FROM recipe_categories WHERE categoryId = :categoryId))
           AND (:favoritesOnly = 0 OR favorite = 1)
