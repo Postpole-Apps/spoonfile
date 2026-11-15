@@ -6,6 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -52,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.postpole.spoonfile.R
+import com.postpole.spoonfile.data.CategoryEntity
 import com.postpole.spoonfile.review.launchInAppReview
 import com.postpole.spoonfile.ui.findActivity
 import com.postpole.spoonfile.ui.theme.RecipePhotoShape
@@ -69,7 +71,6 @@ fun RecipeEditScreen(
     val context = LocalContext.current
     val activity = context.findActivity()
     val photoFailed = stringResource(R.string.edit_photo_failed)
-    var newCategory by rememberSaveable { mutableStateOf("") }
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) viewModel.onPhotoPicked { context.contentResolver.openInputStream(uri) }
@@ -132,93 +133,132 @@ fun RecipeEditScreen(
                 }
             }
 
-            OutlinedTextField(
-                value = form.title,
-                onValueChange = viewModel::setTitle,
-                label = { Text(stringResource(R.string.edit_field_title)) },
-                isError = form.titleError,
-                supportingText = if (form.titleError) {
-                    { Text(stringResource(R.string.edit_title_required)) }
-                } else {
-                    null
-                },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
+            RecipeFormFields(
+                form = form,
+                categories = categories,
+                onEdit = viewModel::edit,
+                onTitle = viewModel::setTitle,
+                onRating = viewModel::setRating,
+                onToggleCategory = viewModel::toggleCategory,
+                onCreateCategory = viewModel::createCategory,
             )
-            Field(form.description, R.string.edit_field_description, minLines = 2) { v -> viewModel.edit { it.copy(description = v) } }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Field(form.servings, R.string.edit_field_servings, number = true, modifier = Modifier.weight(1f)) { v ->
-                    viewModel.edit { it.copy(servings = v) }
-                }
-                Field(form.totalMinutes, R.string.edit_field_total, number = true, modifier = Modifier.weight(1f)) { v ->
-                    viewModel.edit { it.copy(totalMinutes = v.filter(Char::isDigit)) }
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Field(form.prepMinutes, R.string.edit_field_prep, number = true, modifier = Modifier.weight(1f)) { v ->
-                    viewModel.edit { it.copy(prepMinutes = v.filter(Char::isDigit)) }
-                }
-                Field(form.cookMinutes, R.string.edit_field_cook, number = true, modifier = Modifier.weight(1f)) { v ->
-                    viewModel.edit { it.copy(cookMinutes = v.filter(Char::isDigit)) }
-                }
-            }
-            Field(form.ingredients, R.string.edit_field_ingredients, minLines = 6, hint = R.string.edit_ingredients_hint) { v ->
-                viewModel.edit { it.copy(ingredients = v) }
-            }
-            Field(form.steps, R.string.edit_field_steps, minLines = 6, hint = R.string.edit_steps_hint) { v ->
-                viewModel.edit { it.copy(steps = v) }
-            }
-            Field(form.notes, R.string.edit_field_notes, minLines = 2) { v -> viewModel.edit { it.copy(notes = v) } }
-            Field(form.nutrition, R.string.edit_field_nutrition, minLines = 2) { v -> viewModel.edit { it.copy(nutrition = v) } }
-            Field(form.sourceName, R.string.edit_field_source_name) { v -> viewModel.edit { it.copy(sourceName = v) } }
-            Field(form.sourceUrl, R.string.edit_field_source_url, url = true) { v -> viewModel.edit { it.copy(sourceUrl = v) } }
-
-            Text(stringResource(R.string.edit_rating), style = MaterialTheme.typography.titleMedium)
-            Row {
-                (1..5).forEach { star ->
-                    val cd = stringResource(R.string.edit_star_cd, star)
-                    IconButton(
-                        onClick = { viewModel.setRating(if (form.rating == star) 0 else star) },
-                        modifier = Modifier.semantics { contentDescription = cd },
-                    ) {
-                        Icon(
-                            Icons.Filled.Star,
-                            contentDescription = null,
-                            tint = if (star <= form.rating) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outlineVariant,
-                        )
-                    }
-                }
-            }
-
-            Text(stringResource(R.string.edit_categories), style = MaterialTheme.typography.titleMedium)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                categories.forEach { category ->
-                    FilterChip(
-                        selected = category.id in form.categoryIds,
-                        onClick = { viewModel.toggleCategory(category.id) },
-                        label = { Text(category.name) },
-                    )
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                OutlinedTextField(
-                    value = newCategory,
-                    onValueChange = { newCategory = it },
-                    label = { Text(stringResource(R.string.edit_new_category)) },
-                    singleLine = true,
-                    modifier = Modifier.weight(1f),
-                )
-                FilledTonalButton(
-                    onClick = {
-                        viewModel.createCategory(newCategory)
-                        newCategory = ""
-                    },
-                    enabled = newCategory.isNotBlank(),
-                ) { Text(stringResource(R.string.edit_add_category)) }
-            }
-            Spacer(Modifier.height(16.dp))
         }
     }
+}
+
+/** The editable recipe fields, shared by the edit screen and the web import preview. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun ColumnScope.RecipeFormFields(
+    form: RecipeEditForm,
+    categories: List<CategoryEntity>,
+    onEdit: ((RecipeEditForm) -> RecipeEditForm) -> Unit,
+    onTitle: (String) -> Unit,
+    onRating: (Int) -> Unit,
+    onToggleCategory: (Long) -> Unit,
+    onCreateCategory: (String) -> Unit,
+    suggestedCategories: List<String> = emptyList(),
+    selectedSuggestions: Set<String> = emptySet(),
+    onToggleSuggestion: (String) -> Unit = {},
+) {
+    var newCategory by rememberSaveable { mutableStateOf("") }
+    OutlinedTextField(
+        value = form.title,
+        onValueChange = onTitle,
+        label = { Text(stringResource(R.string.edit_field_title)) },
+        isError = form.titleError,
+        supportingText = if (form.titleError) {
+            { Text(stringResource(R.string.edit_title_required)) }
+        } else {
+            null
+        },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth(),
+    )
+    Field(form.description, R.string.edit_field_description, minLines = 2) { v -> onEdit { it.copy(description = v) } }
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Field(form.servings, R.string.edit_field_servings, number = true, modifier = Modifier.weight(1f)) { v ->
+            onEdit { it.copy(servings = v) }
+        }
+        Field(form.totalMinutes, R.string.edit_field_total, number = true, modifier = Modifier.weight(1f)) { v ->
+            onEdit { it.copy(totalMinutes = v.filter(Char::isDigit)) }
+        }
+    }
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Field(form.prepMinutes, R.string.edit_field_prep, number = true, modifier = Modifier.weight(1f)) { v ->
+            onEdit { it.copy(prepMinutes = v.filter(Char::isDigit)) }
+        }
+        Field(form.cookMinutes, R.string.edit_field_cook, number = true, modifier = Modifier.weight(1f)) { v ->
+            onEdit { it.copy(cookMinutes = v.filter(Char::isDigit)) }
+        }
+    }
+    Field(form.ingredients, R.string.edit_field_ingredients, minLines = 6, hint = R.string.edit_ingredients_hint) { v ->
+        onEdit { it.copy(ingredients = v) }
+    }
+    Field(form.steps, R.string.edit_field_steps, minLines = 6, hint = R.string.edit_steps_hint) { v ->
+        onEdit { it.copy(steps = v) }
+    }
+    Field(form.notes, R.string.edit_field_notes, minLines = 2) { v -> onEdit { it.copy(notes = v) } }
+    Field(form.nutrition, R.string.edit_field_nutrition, minLines = 2) { v -> onEdit { it.copy(nutrition = v) } }
+    Field(form.sourceName, R.string.edit_field_source_name) { v -> onEdit { it.copy(sourceName = v) } }
+    Field(form.sourceUrl, R.string.edit_field_source_url, url = true) { v -> onEdit { it.copy(sourceUrl = v) } }
+
+    Text(stringResource(R.string.edit_rating), style = MaterialTheme.typography.titleMedium)
+    Row {
+        (1..5).forEach { star ->
+            val cd = stringResource(R.string.edit_star_cd, star)
+            IconButton(
+                onClick = { onRating(if (form.rating == star) 0 else star) },
+                modifier = Modifier.semantics { contentDescription = cd },
+            ) {
+                Icon(
+                    Icons.Filled.Star,
+                    contentDescription = null,
+                    tint = if (star <= form.rating) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outlineVariant,
+                )
+            }
+        }
+    }
+
+    Text(stringResource(R.string.edit_categories), style = MaterialTheme.typography.titleMedium)
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        categories.forEach { category ->
+            FilterChip(
+                selected = category.id in form.categoryIds,
+                onClick = { onToggleCategory(category.id) },
+                label = { Text(category.name) },
+            )
+        }
+    }
+    if (suggestedCategories.isNotEmpty()) {
+        Text(stringResource(R.string.import_suggested_categories), style = MaterialTheme.typography.titleSmall)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            suggestedCategories.forEach { name ->
+                FilterChip(
+                    selected = name in selectedSuggestions,
+                    onClick = { onToggleSuggestion(name) },
+                    label = { Text(name) },
+                )
+            }
+        }
+    }
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        OutlinedTextField(
+            value = newCategory,
+            onValueChange = { newCategory = it },
+            label = { Text(stringResource(R.string.edit_new_category)) },
+            singleLine = true,
+            modifier = Modifier.weight(1f),
+        )
+        FilledTonalButton(
+            onClick = {
+                onCreateCategory(newCategory)
+                newCategory = ""
+            },
+            enabled = newCategory.isNotBlank(),
+        ) { Text(stringResource(R.string.edit_add_category)) }
+    }
+    Spacer(Modifier.height(16.dp))
 }
 
 @Composable
