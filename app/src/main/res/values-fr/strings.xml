@@ -48,6 +48,7 @@
     <plurals name="shopping_added">
         <item quantity="one">%d article ajouté à votre liste de courses</item>
         <item quantity="other">%d articles ajoutés à votre liste de courses</item>
+        <item quantity="many">%d articles ajoutés à votre liste de courses</item>
     </plurals>
     <string name="toolbar_grid">Affichage en grille</string>
     <string name="toolbar_list">Affichage en liste</string>
@@ -110,10 +111,12 @@
     <plurals name="file_count">
         <item quantity="one">%d recette dans ce fichier</item>
         <item quantity="other">%d recettes dans ce fichier</item>
+        <item quantity="many">%d recettes dans ce fichier</item>
     </plurals>
     <plurals name="file_unreadable_note">
         <item quantity="one">%d entrée n\'a pas pu être lue et est ignorée.</item>
         <item quantity="other">%d entrées n\'ont pas pu être lues et sont ignorées.</item>
+        <item quantity="many">%d entrées n\'ont pas pu être lues et sont ignorées.</item>
     </plurals>
     <string name="file_truncated_note">Ce fichier est très volumineux, seule une partie a donc été lue.</string>
     <string name="file_clear_all">Tout désélectionner</string>
@@ -123,6 +126,7 @@
     <plurals name="file_import_button">
         <item quantity="one">Importer %d recette</item>
         <item quantity="other">Importer %d recettes</item>
+        <item quantity="many">Importer %d recettes</item>
     </plurals>
     <string name="file_importing">Import de %1$d sur %2$d…</string>
     <string name="file_summary_title">Import terminé</string>
@@ -131,6 +135,7 @@
     <plurals name="file_summary_duplicates">
         <item quantity="one">%d doublon ignoré</item>
         <item quantity="other">%d doublons ignorés</item>
+        <item quantity="many">%d doublons ignorés</item>
     </plurals>
     <string name="file_summary_failed">Échecs : %d</string>
     <string name="file_reason">%1$s : %2$d</string>
@@ -140,7 +145,6 @@
     <string name="file_reason_no_title">Titre manquant</string>
     <string name="file_reason_save">Enregistrement impossible</string>
     <string name="file_done">Terminé</string>
-    <string name="stub_coming_soon">Cette partie arrive bientôt.</string>
 
     <!-- Detail -->
     <string name="detail_favorite">Favori</string>
@@ -283,6 +287,10 @@
     <string name="cleanup_page_cd">Page scannée</string>
     <string name="cleanup_use_photo">Utiliser la photo de la page comme photo de la recette</string>
     <string name="cleanup_read_failed">Aucun texte trouvé sur cette photo. Réessayez avec une page plus nette et bien éclairée.</string>
+    <string name="scan_paste_text">Coller le texte à la place</string>
+    <string name="scan_paste_title">Coller le texte</string>
+    <string name="scan_paste_hint">Texte de la recette</string>
+    <string name="scan_paste_confirm">Continuer</string>
     <string name="cleanup_hint">Appuyez sur une ligne pour indiquer ce qu\'elle est. Rien n\'est encore enregistré.</string>
     <string name="cleanup_merge">Fusionner avec la suivante</string>
     <string name="cleanup_split">Scinder la ligne</string>

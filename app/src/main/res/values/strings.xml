@@ -139,7 +139,6 @@
     <string name="file_reason_no_title">Missing title</string>
     <string name="file_reason_save">Couldn\'t be saved</string>
     <string name="file_done">Done</string>
-    <string name="stub_coming_soon">This part is on its way.</string>
 
     <!-- Detail -->
     <string name="detail_favorite">Favourite</string>
@@ -282,6 +281,10 @@
     <string name="cleanup_page_cd">Scanned page</string>
     <string name="cleanup_use_photo">Use page photo as recipe photo</string>
     <string name="cleanup_read_failed">Couldn\'t find any text on that photo. Try again with a clearer, well-lit page.</string>
+    <string name="scan_paste_text">Paste the text instead</string>
+    <string name="scan_paste_title">Paste the text</string>
+    <string name="scan_paste_hint">Recipe text</string>
+    <string name="scan_paste_confirm">Continue</string>
     <string name="cleanup_hint">Tap a line to say what it is. Nothing is saved yet.</string>
     <string name="cleanup_merge">Merge with next</string>
     <string name="cleanup_split">Split line</string>

@@ -48,6 +48,7 @@
     <plurals name="shopping_added">
         <item quantity="one">%d artículo añadido a tu lista de la compra</item>
         <item quantity="other">%d artículos añadidos a tu lista de la compra</item>
+        <item quantity="many">%d artículos añadidos a tu lista de la compra</item>
     </plurals>
     <string name="toolbar_grid">Vista de cuadrícula</string>
     <string name="toolbar_list">Vista de lista</string>
@@ -110,10 +111,12 @@
     <plurals name="file_count">
         <item quantity="one">%d receta en este archivo</item>
         <item quantity="other">%d recetas en este archivo</item>
+        <item quantity="many">%d recetas en este archivo</item>
     </plurals>
     <plurals name="file_unreadable_note">
         <item quantity="one">%d entrada no se pudo leer y se omite.</item>
         <item quantity="other">%d entradas no se pudieron leer y se omiten.</item>
+        <item quantity="many">%d entradas no se pudieron leer y se omiten.</item>
     </plurals>
     <string name="file_truncated_note">Este archivo es muy grande, así que solo se leyó una parte.</string>
     <string name="file_clear_all">Quitar todas</string>
@@ -123,6 +126,7 @@
     <plurals name="file_import_button">
         <item quantity="one">Importar %d receta</item>
         <item quantity="other">Importar %d recetas</item>
+        <item quantity="many">Importar %d recetas</item>
     </plurals>
     <string name="file_importing">Importando %1$d de %2$d…</string>
     <string name="file_summary_title">Importación terminada</string>
@@ -131,6 +135,7 @@
     <plurals name="file_summary_duplicates">
         <item quantity="one">%d duplicada omitida</item>
         <item quantity="other">%d duplicadas omitidas</item>
+        <item quantity="many">%d duplicadas omitidas</item>
     </plurals>
     <string name="file_summary_failed">Con error: %d</string>
     <string name="file_reason">%1$s: %2$d</string>
@@ -140,7 +145,6 @@
     <string name="file_reason_no_title">Falta el título</string>
     <string name="file_reason_save">No se pudo guardar</string>
     <string name="file_done">Hecho</string>
-    <string name="stub_coming_soon">Esta parte llegará pronto.</string>
 
     <!-- Detail -->
     <string name="detail_favorite">Favorita</string>
@@ -283,6 +287,10 @@
     <string name="cleanup_page_cd">Página escaneada</string>
     <string name="cleanup_use_photo">Usar la foto de la página como foto de la receta</string>
     <string name="cleanup_read_failed">No se encontró texto en esa foto. Inténtalo de nuevo con una página más nítida y bien iluminada.</string>
+    <string name="scan_paste_text">Pegar el texto en su lugar</string>
+    <string name="scan_paste_title">Pegar el texto</string>
+    <string name="scan_paste_hint">Texto de la receta</string>
+    <string name="scan_paste_confirm">Continuar</string>
     <string name="cleanup_hint">Toca una línea para indicar qué es. Todavía no se guarda nada.</string>
     <string name="cleanup_merge">Unir con la siguiente</string>
     <string name="cleanup_split">Dividir línea</string>
