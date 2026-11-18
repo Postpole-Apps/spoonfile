@@ -72,7 +72,7 @@
     <string name="add_type_it_in_hint">Write the recipe yourself</string>
     <string name="add_import_file">Import recipe file</string>
     <string name="add_import_file_hint">Recipe file from another app</string>
-    <string name="add_privacy">Your recipes stay on your device</string>
+    <string name="add_privacy">Your data is stored on your device</string>
     <!-- Import from a link -->
     <string name="import_link_label">Recipe page link</string>
     <string name="import_link_invalid">That doesn\'t look like a web link. Paste the full address of the recipe page.</string>

@@ -74,7 +74,7 @@
     <string name="add_type_it_in_hint">Écrivez la recette vous-même</string>
     <string name="add_import_file">Importer un fichier de recettes</string>
     <string name="add_import_file_hint">Fichier de recettes d\'une autre appli</string>
-    <string name="add_privacy">Vos recettes restent sur votre appareil</string>
+    <string name="add_privacy">Vos données sont stockées sur votre appareil</string>
     <!-- Import from a link -->
     <string name="import_link_label">Lien de la page de recette</string>
     <string name="import_link_invalid">Ce n\'est pas un lien web. Collez l\'adresse complète de la page de recette.</string>

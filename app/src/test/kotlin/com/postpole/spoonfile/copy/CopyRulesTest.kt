@@ -184,8 +184,8 @@ class CopyRulesTest {
         }
         val en = locales.first()
         assertEquals("Spoonfile: Recipe Organizer", en.title)
-        assertEquals("Save recipes from any website or cookbook. Pay once. Recipes stay on your phone.", en.shortDescription)
-        assertEquals(80, en.shortDescription.length)
+        assertEquals("Save recipes from any website or cookbook. Your data is stored on your device.", en.shortDescription)
+        assertEquals(78, en.shortDescription.length)
     }
 
     @Test

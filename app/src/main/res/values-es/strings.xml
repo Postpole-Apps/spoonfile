@@ -74,7 +74,7 @@
     <string name="add_type_it_in_hint">Escribe tú mismo la receta</string>
     <string name="add_import_file">Importar archivo de recetas</string>
     <string name="add_import_file_hint">Archivo de recetas de otra aplicación</string>
-    <string name="add_privacy">Tus recetas se quedan en tu dispositivo</string>
+    <string name="add_privacy">Tus datos se almacenan en tu dispositivo</string>
     <!-- Import from a link -->
     <string name="import_link_label">Enlace de la página de la receta</string>
     <string name="import_link_invalid">Eso no parece un enlace web. Pega la dirección completa de la página de la receta.</string>
