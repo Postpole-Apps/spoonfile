@@ -2,38 +2,8 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "f08b3a077e83871cc6df5025574c496f",
+    "identityHash": "b595a6c8405d766dc58b959fe9b237a3",
     "entities": [
-      {
-        "tableName": "items",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `createdAt` INTEGER NOT NULL)",
-        "fields": [
-          {
-            "fieldPath": "id",
-            "columnName": "id",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "title",
-            "columnName": "title",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "createdAt",
-            "columnName": "createdAt",
-            "affinity": "INTEGER",
-            "notNull": true
-          }
-        ],
-        "primaryKey": {
-          "autoGenerate": true,
-          "columnNames": [
-            "id"
-          ]
-        }
-      },
       {
         "tableName": "recipes",
         "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `uid` TEXT NOT NULL, `title` TEXT NOT NULL, `description` TEXT, `servingsText` TEXT, `servings` REAL, `prepMinutes` INTEGER, `cookMinutes` INTEGER, `totalMinutes` INTEGER, `notes` TEXT, `nutritionText` TEXT, `sourceName` TEXT, `sourceUrl` TEXT, `imageFile` TEXT, `rating` INTEGER NOT NULL, `favorite` INTEGER NOT NULL, `origin` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL)",
@@ -478,7 +448,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f08b3a077e83871cc6df5025574c496f')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'b595a6c8405d766dc58b959fe9b237a3')"
     ]
   }
 }

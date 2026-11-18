@@ -10,7 +10,7 @@ import javax.inject.Inject
 import kotlin.math.max
 
 /** Recipe photos live as `<uuid>.jpg` files in [dir]; the database stores only the file name. */
-open class ImageStore(private val dir: File) {
+open class ImageStore(val dir: File) {
 
     @Inject
     constructor(@ApplicationContext context: Context) : this(File(context.filesDir, "images"))

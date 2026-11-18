@@ -158,7 +158,7 @@ fun RecipeListScreen(
                     onImport = { viewModel.onAddAction(AddAction.IMPORT_FILE) },
                 )
             } else {
-                RecipeGrid(state, viewModel, onOpenRecipe, onOpenPro, onSeeAll = { showCategories = true })
+                RecipeGrid(state, viewModel, onOpenRecipe, onOpenPro, onOpenSettings, onSeeAll = { showCategories = true })
             }
 
             BottomFade(height = 140.dp, modifier = Modifier.align(Alignment.BottomCenter))
@@ -257,6 +257,7 @@ private fun RecipeGrid(
     viewModel: RecipeListViewModel,
     onOpenRecipe: (Long) -> Unit,
     onOpenPro: () -> Unit,
+    onOpenSettings: () -> Unit,
     onSeeAll: () -> Unit,
 ) {
     val full: LazyGridItemSpanScope.() -> GridItemSpan = { GridItemSpan(maxLineSpan) }
@@ -288,6 +289,9 @@ private fun RecipeGrid(
         if (state.atLimit) {
             item(span = full) { LimitBanner(onOpenPro) }
         }
+        if (state.showBackupNudge) {
+            item(span = full) { BackupNudgeBanner(onBackUp = onOpenSettings, onDismiss = viewModel::dismissBackupNudge) }
+        }
         if (state.categories.isNotEmpty()) {
             item(span = full) {
                 CategoryTiles(state, onSelect = viewModel::selectCategory, onSeeAll = onSeeAll)
@@ -310,6 +314,26 @@ private fun RecipeGrid(
                 RecipeGridCard(recipe, viewModel) { onOpenRecipe(recipe.id) }
             } else {
                 RecipeRow(recipe, viewModel) { onOpenRecipe(recipe.id) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BackupNudgeBanner(onBackUp: () -> Unit, onDismiss: () -> Unit) {
+    Surface(
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.backup_nudge_message), style = MaterialTheme.typography.bodyLarge)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = onBackUp) { Text(stringResource(R.string.backup_nudge_action)) }
+                androidx.compose.material3.TextButton(onClick = onDismiss) {
+                    Text(stringResource(R.string.backup_nudge_dismiss))
+                }
             }
         }
     }

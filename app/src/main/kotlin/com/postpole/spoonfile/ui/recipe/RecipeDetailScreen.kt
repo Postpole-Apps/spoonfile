@@ -53,7 +53,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import com.postpole.spoonfile.exporter.RecipeTextFormatter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -107,8 +111,29 @@ fun RecipeDetailScreen(
                                 contentDescription = stringResource(if (fav) R.string.detail_unfavorite else R.string.detail_favorite),
                             )
                         }
-                        // Share-as-text lands later; keep the entry in place.
-                        IconButton(onClick = { scope.launch { snackbar.showSnackbar(comingSoon) } }) {
+                        val context = LocalContext.current
+                        val labels = RecipeTextFormatter.Labels(
+                            servings = stringResource(R.string.share_label_servings),
+                            ingredients = stringResource(R.string.share_label_ingredients),
+                            steps = stringResource(R.string.share_label_steps),
+                            source = stringResource(R.string.share_label_source),
+                        )
+                        IconButton(
+                            onClick = {
+                                val servings = state.servings?.takeIf { state.scale != 1.0 }?.let { QuantityScaler.format(it) }
+                                val text = RecipeTextFormatter.format(details, labels, state.scale, servings)
+                                val send = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_SUBJECT, details.recipe.title)
+                                    putExtra(Intent.EXTRA_TEXT, text)
+                                }
+                                try {
+                                    context.startActivity(Intent.createChooser(send, null))
+                                } catch (_: ActivityNotFoundException) {
+                                    // No app can take shared text.
+                                }
+                            },
+                        ) {
                             Icon(Icons.Filled.Share, contentDescription = stringResource(R.string.detail_share))
                         }
                         IconButton(onClick = { onEdit(details.recipe.id) }) {

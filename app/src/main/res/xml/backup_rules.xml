@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 8 (API 26-27) full-backup rules. These versions have no device-to-device-only flag, so allowing
+  anything here would also let it into cloud backup. Everything is excluded and nothing is included: no cloud
+  backup and no transfer on these versions (the backup file from Settings still works). Android 9-11 use
+  res/xml-v28/backup_rules.xml; Android 12+ uses res/xml/data_extraction_rules.xml.
+-->
+<full-backup-content>
+    <exclude domain="root" />
+    <exclude domain="file" />
+    <exclude domain="database" />
+    <exclude domain="sharedpref" />
+    <exclude domain="external" />
+</full-backup-content>

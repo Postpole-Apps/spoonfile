@@ -1,9 +1,8 @@
 package com.postpole.spoonfile.data
 
 import androidx.room.withTransaction
-import org.json.JSONArray
-import org.json.JSONException
-import org.json.JSONObject
+import java.io.File
+import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import javax.inject.Inject
@@ -13,101 +12,81 @@ import javax.inject.Singleton
 class InvalidBackupException(message: String, cause: Throwable? = null) : Exception(message, cause)
 
 /**
- * Versioned JSON backup of all Room data, plus CSV export of items. Works on plain streams;
- * the UI supplies them from the Storage Access Framework, so no storage permission is needed.
+ * Backup and restore of all recipe data as a `.zip` (JSON + photos); see [RecipeBackupZip] for the layout.
+ * Works on plain streams, which the UI gets from the Storage Access Framework, so no storage permission is needed.
  *
- * Format v1: `{"format":"postpole-backup","version":1,"exportedAt":<ms>,"items":[{"id","title","createdAt"}]}`.
- * Add new tables as new top-level arrays and bump [FORMAT_VERSION]; keep reading older versions.
+ * Restore is never capped: a user can always bring back their own data. If it lands over the free limit, adding
+ * new recipes stays blocked until Pro (the cap is checked when adding, not here).
  */
 @Singleton
 class BackupRepository @Inject constructor(
     private val db: AppDatabase,
+    private val images: ImageStore,
 ) {
-    /** Writes the backup and returns the number of items exported. */
-    suspend fun exportJson(out: OutputStream, now: Long = System.currentTimeMillis()): Int {
-        val items = db.itemDao().getAll()
-        val json = JSONObject()
-            .put("format", FORMAT_NAME)
-            .put("version", FORMAT_VERSION)
-            .put("exportedAt", now)
-            .put(
-                "items",
-                JSONArray().apply {
-                    items.forEach {
-                        put(
-                            JSONObject()
-                                .put("id", it.id)
-                                .put("title", it.title)
-                                .put("createdAt", it.createdAt),
-                        )
-                    }
-                },
+    /** Writes the backup and returns the number of recipes exported. */
+    suspend fun exportZip(out: OutputStream, now: Long = System.currentTimeMillis()): Int {
+        val dao = db.backupDao()
+        val data = db.withTransaction {
+            BackupData(
+                recipes = dao.recipes(),
+                ingredients = dao.ingredients(),
+                steps = dao.steps(),
+                categories = dao.categories(),
+                recipeCategories = dao.recipeCategories(),
+                shoppingItems = dao.shoppingItems(),
+                exportedAt = now,
             )
-        out.write(json.toString(2).toByteArray(Charsets.UTF_8))
-        out.flush()
-        return items.size
+        }
+        RecipeBackupZip.write(out, data, images.dir)
+        return data.recipes.size
     }
 
     /**
-     * Replaces all data with the backup's contents, atomically. The file is fully parsed and
-     * validated first, so an invalid file leaves existing data untouched. Returns the item count.
+     * Replaces all recipe data and photos with the backup's contents. The file is fully read and validated first,
+     * with photos going to a temporary folder; only then are the tables replaced and the photos folder swapped, in
+     * one transaction. Any failure leaves existing data and photos untouched. Returns the recipe count.
      */
-    suspend fun importJson(input: InputStream): Int {
-        val items = parse(input.readBytes().toString(Charsets.UTF_8))
-        db.withTransaction {
-            val dao = db.itemDao()
-            dao.deleteAll()
-            dao.insertAll(items)
-        }
-        return items.size
-    }
-
-    /** Writes Items as RFC 4180 CSV (header `id,title,createdAt`) and returns the row count. */
-    suspend fun exportItemsCsv(out: OutputStream): Int {
-        val items = db.itemDao().getAll()
-        val csv = buildString {
-            append("id,title,createdAt\r\n")
-            items.forEach { append(it.id).append(',').append(csvCell(it.title)).append(',').append(it.createdAt).append("\r\n") }
-        }
-        out.write(csv.toByteArray(Charsets.UTF_8))
-        out.flush()
-        return items.size
-    }
-
-    internal fun parse(text: String): List<Item> {
+    suspend fun importZip(input: InputStream): Int {
+        val live = images.dir
+        val tmp = File(live.parentFile, "${live.name}.restore")
+        val old = File(live.parentFile, "${live.name}.old")
+        tmp.deleteRecursively()
+        old.deleteRecursively()
         try {
-            val root = JSONObject(text)
-            if (root.optString("format") != FORMAT_NAME) throw InvalidBackupException("Not a backup file")
-            val version = root.getInt("version")
-            if (version < 1 || version > FORMAT_VERSION) {
-                throw InvalidBackupException("Unsupported backup version $version")
+            val data = RecipeBackupZip.read(input, tmp)
+            val dao = db.backupDao()
+            db.withTransaction {
+                // Recipes cascade to ingredients, steps and category links; shopping items only null their link.
+                dao.deleteShoppingItems()
+                dao.deleteRecipes()
+                dao.deleteCategories()
+                dao.insertCategories(data.categories)
+                dao.insertRecipes(data.recipes)
+                dao.insertIngredients(data.ingredients)
+                dao.insertSteps(data.steps)
+                dao.insertRecipeCategories(data.recipeCategories)
+                dao.insertShoppingItems(data.shoppingItems)
+                swapImages(live, tmp, old)
             }
-            val array = root.getJSONArray("items")
-            val seen = HashSet<Long>()
-            return List(array.length()) { i ->
-                val o = array.getJSONObject(i)
-                val id = o.getLong("id")
-                if (!seen.add(id)) throw InvalidBackupException("Duplicate item id $id")
-                Item(id = id, title = o.getString("title"), createdAt = o.getLong("createdAt"))
-            }
-        } catch (e: JSONException) {
-            throw InvalidBackupException("Malformed backup file", e)
+            old.deleteRecursively()
+            return data.recipes.size
+        } finally {
+            tmp.deleteRecursively()
         }
     }
 
-    private fun csvCell(value: String): String {
-        // Neutralise spreadsheet formula injection (=, +, -, @, tab, CR) before quoting.
-        val safe = if (value.isNotEmpty() && value[0] in FORMULA_PREFIXES) "'$value" else value
-        return if (safe.any { it == ',' || it == '"' || it == '\n' || it == '\r' }) {
-            "\"" + safe.replace("\"", "\"\"") + "\""
-        } else {
-            safe
+    /** Moves [tmp] into place as [live]; puts the old folder back and throws if that can't be done. */
+    private fun swapImages(live: File, tmp: File, old: File) {
+        val hadLive = live.exists()
+        if (hadLive && !live.renameTo(old)) throw IOException("Could not set aside the photos folder")
+        if (!tmp.renameTo(live)) {
+            if (hadLive) old.renameTo(live)
+            throw IOException("Could not move the restored photos into place")
         }
     }
 
     companion object {
         const val FORMAT_NAME = "postpole-backup"
         const val FORMAT_VERSION = 1
-        private val FORMULA_PREFIXES = charArrayOf('=', '+', '-', '@', '\t', '\r')
     }
 }

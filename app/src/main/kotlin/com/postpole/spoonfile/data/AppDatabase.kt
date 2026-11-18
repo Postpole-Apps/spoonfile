@@ -6,7 +6,6 @@ import androidx.room.TypeConverters
 
 @Database(
     entities = [
-        Item::class,
         RecipeEntity::class,
         IngredientEntity::class,
         StepEntity::class,
@@ -19,7 +18,7 @@ import androidx.room.TypeConverters
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun itemDao(): ItemDao
+    abstract fun backupDao(): BackupDao
     abstract fun recipeDao(): RecipeDao
     abstract fun categoryDao(): CategoryDao
     abstract fun shoppingDao(): ShoppingDao

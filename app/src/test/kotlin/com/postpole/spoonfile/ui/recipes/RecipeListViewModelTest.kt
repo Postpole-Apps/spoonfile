@@ -12,6 +12,7 @@ import com.postpole.spoonfile.billing.ProductResult
 import com.postpole.spoonfile.billing.PurchaseUpdate
 import com.postpole.spoonfile.data.AppDatabase
 import com.postpole.spoonfile.data.ImageStore
+import com.postpole.spoonfile.data.SettingsRepository
 import com.postpole.spoonfile.data.RecipeEntity
 import com.postpole.spoonfile.data.RecipeRepository
 import com.postpole.spoonfile.data.RecipeSort
@@ -70,7 +71,7 @@ class RecipeListViewModelTest {
         scope = CoroutineScope(Dispatchers.Unconfined + Job())
         val dataStore = PreferenceDataStoreFactory.create(scope = scope) { File(tmp.root, "t.preferences_pb") }
         val billing = BillingRepository(IdleGateway(), dataStore, scope, log = {})
-        vm = RecipeListViewModel(repo, db.categoryDao(), billing)
+        vm = RecipeListViewModel(repo, db.categoryDao(), billing, SettingsRepository(dataStore))
     }
 
     @After

@@ -5,12 +5,14 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.postpole.spoonfile.billing.BillingRepository
+import com.postpole.spoonfile.data.BackupNudge
 import com.postpole.spoonfile.data.CategoryDao
 import com.postpole.spoonfile.data.CategoryWithCount
 import com.postpole.spoonfile.data.Limits
 import com.postpole.spoonfile.data.RecipeEntity
 import com.postpole.spoonfile.data.RecipeRepository
 import com.postpole.spoonfile.data.RecipeSort
+import com.postpole.spoonfile.data.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
@@ -22,6 +24,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /** The ways to start a new recipe from the Add sheet / empty state. */
@@ -46,6 +49,8 @@ data class RecipeListUiState(
     val count: Int = 0,
     val isPro: Boolean = false,
     val loaded: Boolean = false,
+    /** Monthly "save a backup" nudge; see [BackupNudge]. */
+    val showBackupNudge: Boolean = false,
 ) {
     /** First [RecipeListViewModel.MAX_CATEGORY_TILES] categories; all of them when there are that many or fewer. */
     val visibleCategories: List<CategoryWithCount> get() = categories.take(RecipeListViewModel.MAX_CATEGORY_TILES)
@@ -62,6 +67,7 @@ class RecipeListViewModel @Inject constructor(
     private val repository: RecipeRepository,
     categoryDao: CategoryDao,
     billing: BillingRepository,
+    private val settings: SettingsRepository,
 ) : ViewModel() {
 
     private data class Filters(
@@ -78,7 +84,7 @@ class RecipeListViewModel @Inject constructor(
         repository.observeList(it.query, it.categoryId, it.favoritesOnly, it.sort)
     }
 
-    val state: StateFlow<RecipeListUiState> = combine(
+    private val baseState: Flow<RecipeListUiState> = combine(
         filters,
         recipes,
         categoryDao.observeAllWithCounts(),
@@ -97,7 +103,23 @@ class RecipeListViewModel @Inject constructor(
             isPro = isPro,
             loaded = true,
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RecipeListUiState())
+    }
+
+    private val nudge: Flow<Boolean> = combine(
+        settings.lastExportAt,
+        settings.remindBackup,
+        settings.nudgeDismissedAt,
+        repository.count(),
+    ) { last, remind, dismissed, count ->
+        BackupNudge.shouldShow(System.currentTimeMillis(), last, count, remind, dismissed)
+    }
+
+    val state: StateFlow<RecipeListUiState> = combine(baseState, nudge) { s, show -> s.copy(showBackupNudge = show) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RecipeListUiState())
+
+    fun dismissBackupNudge() {
+        viewModelScope.launch { settings.dismissNudge(System.currentTimeMillis()) }
+    }
 
     private val _events = Channel<RecipeListEvent>(Channel.BUFFERED)
     val events: Flow<RecipeListEvent> = _events.receiveAsFlow()
