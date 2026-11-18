@@ -50,6 +50,26 @@ class PaprikaImportPlanTest {
     }
 
     @Test
+    fun summaryKeepsDuplicatesApartFromOtherSkips() {
+        // 48 in file, 2 duplicates, 33 free slots: preview and import-all M are 46, 33 ticked are imported.
+        val items = (0 until 48).map { item(it, dup = it == 5 || it == 20) }
+        val p = preview(items, remaining = 33)
+        assertEquals(46, p.newCount)
+        val (skipped, duplicates) = skipCounts(items, p.ticked, imported = 33, failed = 0)
+        assertEquals(2, duplicates)
+        assertEquals(13, skipped)
+        assertEquals(48, 33 + skipped + duplicates)
+    }
+
+    @Test
+    fun tickedDuplicateIsNotCountedAsSkipped() {
+        val items = (0 until 4).map { item(it, dup = it < 2) }
+        val (skipped, duplicates) = skipCounts(items, setOf(0, 2, 3), imported = 3, failed = 0)
+        assertEquals(1, duplicates)
+        assertEquals(0, skipped)
+    }
+
+    @Test
     fun everythingFitsHasNoBanner() {
         val items = (0 until 10).map { item(it, dup = it == 0) }
         val p = preview(items, remaining = 10)

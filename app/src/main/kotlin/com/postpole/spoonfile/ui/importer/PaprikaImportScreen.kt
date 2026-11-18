@@ -161,7 +161,7 @@ private fun PreviewList(state: PaprikaState.Preview, viewModel: PaprikaImportVie
         item(key = "header") {
             Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    pluralStringResource(R.plurals.file_count, state.items.size, state.items.size),
+                    pluralStringResource(R.plurals.file_count, state.newCount, state.newCount),
                     style = MaterialTheme.typography.titleMedium,
                 )
                 if (state.unreadable > 0) {
@@ -255,6 +255,9 @@ private fun SummaryDialog(summary: PaprikaSummary, onDone: () -> Unit) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(stringResource(R.string.file_summary_imported, summary.imported))
                 Text(stringResource(R.string.file_summary_skipped, summary.skipped))
+                if (summary.duplicatesSkipped > 0) {
+                    Text(pluralStringResource(R.plurals.file_summary_duplicates, summary.duplicatesSkipped, summary.duplicatesSkipped))
+                }
                 if (summary.failed > 0) {
                     Text(stringResource(R.string.file_summary_failed, summary.failed))
                     summary.unreadable.forEach { (reason, count) ->

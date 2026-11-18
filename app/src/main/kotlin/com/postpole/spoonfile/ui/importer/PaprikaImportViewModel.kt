@@ -54,8 +54,10 @@ enum class PaprikaError { NOT_ZIP, UNREADABLE, EMPTY }
 
 data class PaprikaSummary(
     val imported: Int,
-    /** Recipes the user left unticked (including duplicates), or that no longer fit under the free limit. */
+    /** Recipes the user left unticked or that no longer fit under the free limit; duplicates are counted separately. */
     val skipped: Int,
+    /** Duplicates (already in the app, or repeated in the file) that were not imported. */
+    val duplicatesSkipped: Int,
     /** Entries that couldn't be read, by reason. */
     val unreadable: Map<PaprikaFailure, Int>,
     /** Recipes that were read but couldn't be saved. */
@@ -113,6 +115,12 @@ internal class DuplicateFinder(existing: List<DedupeKey>) {
 /** The first [remaining] new recipes, in file order. Duplicates start unticked. */
 internal fun initialTicks(items: List<PaprikaItem>, remaining: Int): Set<Int> =
     items.asSequence().filter { !it.duplicate }.take(remaining.coerceAtLeast(0)).mapTo(LinkedHashSet()) { it.index }
+
+/** (other skipped, duplicates skipped). A duplicate the user ticked by hand and imported is not skipped. */
+internal fun skipCounts(items: List<PaprikaItem>, ticked: Set<Int>, imported: Int, failed: Int): Pair<Int, Int> {
+    val duplicatesSkipped = items.count { it.duplicate && it.index !in ticked }
+    return (items.size - duplicatesSkipped - imported - failed).coerceAtLeast(0) to duplicatesSkipped
+}
 
 @HiltViewModel
 class PaprikaImportViewModel @Inject constructor(
@@ -219,9 +227,11 @@ class PaprikaImportViewModel @Inject constructor(
         job?.cancel()
         job = viewModelScope.launch {
             val saved = withContext(io) { saveTicked(source, ticked) }
+            val (skipped, duplicatesSkipped) = skipCounts(preview.items, ticked, saved.imported, saved.failed)
             val summary = PaprikaSummary(
                 imported = saved.imported,
-                skipped = preview.items.size - saved.imported - saved.failed,
+                skipped = skipped,
+                duplicatesSkipped = duplicatesSkipped,
                 unreadable = saved.unreadable,
                 saveFailed = saved.failed,
             )
