@@ -139,7 +139,6 @@
     <string name="file_reason_no_title">Missing title</string>
     <string name="file_reason_save">Couldn\'t be saved</string>
     <string name="file_done">Done</string>
-    <string name="stub_coming_soon">This part is on its way.</string>
 
     <!-- Detail -->
     <string name="detail_favorite">Favourite</string>
@@ -272,6 +271,10 @@
     <string name="scan_intro">Take a photo of a cookbook page, or choose one from your photos. The text is read on your phone.</string>
     <string name="scan_take_photo">Take a photo</string>
     <string name="scan_choose_photo">Choose from photos</string>
+    <string name="scan_paste_text">Paste the text instead</string>
+    <string name="scan_paste_title">Paste the recipe text</string>
+    <string name="scan_paste_use">Use this text</string>
+    <string name="scan_back_to_text">Back to the text</string>
     <string name="scan_no_camera">No camera app is available. Choose a photo instead.</string>
     <string name="scan_add_source_title">Add a page</string>
     <string name="cleanup_title">Tidy up the text</string>

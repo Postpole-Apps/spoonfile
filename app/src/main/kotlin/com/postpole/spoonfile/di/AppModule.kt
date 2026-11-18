@@ -8,6 +8,8 @@ import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.room.Room
 import com.postpole.spoonfile.analytics.Analytics
 import com.postpole.spoonfile.analytics.createAnalytics
+import com.postpole.spoonfile.importer.ocr.CacheDirScanPhotoCache
+import com.postpole.spoonfile.importer.ocr.ScanPhotoCache
 import com.postpole.spoonfile.importer.ocr.ContentResolverPagePhotoReader
 import com.postpole.spoonfile.importer.ocr.MlKitOcrEngine
 import com.postpole.spoonfile.importer.ocr.OcrEngine
@@ -81,6 +83,9 @@ object AppModule {
 
     @Provides
     fun provideOcrEngine(engine: MlKitOcrEngine): OcrEngine = engine
+
+    @Provides
+    fun provideScanPhotoCache(cache: CacheDirScanPhotoCache): ScanPhotoCache = cache
 
     @Provides
     fun providePagePhotoReader(reader: ContentResolverPagePhotoReader): PagePhotoReader = reader

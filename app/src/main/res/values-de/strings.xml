@@ -140,7 +140,6 @@
     <string name="file_reason_no_title">Titel fehlt</string>
     <string name="file_reason_save">Konnte nicht gespeichert werden</string>
     <string name="file_done">Fertig</string>
-    <string name="stub_coming_soon">Dieser Teil kommt bald.</string>
 
     <!-- Detail -->
     <string name="detail_favorite">Favorit</string>
@@ -273,6 +272,10 @@
     <string name="scan_intro">Mache ein Foto einer Kochbuchseite oder wähle eines aus deinen Fotos. Der Text wird auf deinem Handy gelesen.</string>
     <string name="scan_take_photo">Foto aufnehmen</string>
     <string name="scan_choose_photo">Aus Fotos wählen</string>
+    <string name="scan_paste_text">Text stattdessen einfügen</string>
+    <string name="scan_paste_title">Rezepttext einfügen</string>
+    <string name="scan_paste_use">Diesen Text verwenden</string>
+    <string name="scan_back_to_text">Zurück zum Text</string>
     <string name="scan_no_camera">Keine Kamera-App verfügbar. Wähle stattdessen ein Foto.</string>
     <string name="scan_add_source_title">Seite hinzufügen</string>
     <string name="cleanup_title">Text aufräumen</string>

@@ -312,6 +312,12 @@ class ImportLinkViewModel @Inject constructor(
     }
 
     /** Leaving the preview discards it; nothing was written. */
+    /** Drops the preview only (the scan keeps its pages and lines) and returns to the step before it. */
+    fun closePreview() {
+        discard()
+        if (_state.value is ImportState.Preview) _state.value = ImportState.Input()
+    }
+
     fun discard() {
         job?.cancel()
         photoBytes = null

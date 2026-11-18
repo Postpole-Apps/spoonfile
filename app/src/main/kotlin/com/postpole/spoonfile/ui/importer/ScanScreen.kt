@@ -23,6 +23,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -65,6 +66,9 @@ fun ScanScreen(
     val noCamera = stringResource(R.string.scan_no_camera)
     var showSources by rememberSaveable { mutableStateOf(false) }
     var pendingPhoto by rememberSaveable { mutableStateOf<String?>(null) }
+    var backToCapture by rememberSaveable { mutableStateOf(false) }
+    var showPaste by rememberSaveable { mutableStateOf(false) }
+    var pasteText by rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(scanViewModel) {
         scanViewModel.events.collect { event ->
@@ -76,7 +80,10 @@ fun ScanScreen(
     LaunchedEffect(importViewModel) {
         importViewModel.events.collect { event ->
             when (event) {
-                is ImportEvent.Saved -> onOpenRecipe(event.id)
+                is ImportEvent.Saved -> {
+                    scanViewModel.discardScan()
+                    onOpenRecipe(event.id)
+                }
                 is ImportEvent.OpenRecipe -> onOpenRecipe(event.id)
                 ImportEvent.OpenPro -> onOpenPro()
                 ImportEvent.SaveFailed -> Toast.makeText(context, saveFailed, Toast.LENGTH_SHORT).show()
@@ -88,10 +95,16 @@ fun ScanScreen(
     val takePicture = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
         val uri = pendingPhoto?.let(Uri::parse)
         pendingPhoto = null
-        if (ok && uri != null) scanViewModel.addPage(uri)
+        if (ok && uri != null) {
+            backToCapture = false
+            scanViewModel.addPage(uri)
+        }
     }
     val pickPhoto = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) scanViewModel.addPage(uri)
+        if (uri != null) {
+            backToCapture = false
+            scanViewModel.addPage(uri)
+        }
     }
     val launchCamera = {
         showSources = false
@@ -111,26 +124,33 @@ fun ScanScreen(
     }
 
     val previewing = import is ImportState.Preview
+    // Only the first capture step leaves the flow; it also drops the pages and the cached camera captures.
     val leave = {
         importViewModel.discard()
+        scanViewModel.discardScan()
         onBack()
     }
+    val captureStep = scan.lines.isEmpty() || backToCapture
     BackHandler {
-        if (previewing) leave() else onBack()
+        when {
+            previewing -> importViewModel.closePreview()
+            captureStep -> leave()
+            else -> backToCapture = true
+        }
     }
 
     if (previewing) {
-        ImportPreviewScreen(emptyList(), onClose = leave, viewModel = importViewModel)
+        ImportPreviewScreen(emptyList(), onClose = importViewModel::closePreview, viewModel = importViewModel)
         return
     }
 
-    if (scan.pages.isEmpty() && scan.lines.isEmpty()) {
+    if (captureStep) {
         Scaffold(
             topBar = {
                 TopAppBar(
                     title = { Text(stringResource(R.string.scan_title)) },
                     navigationIcon = {
-                        IconButton(onClick = onBack) {
+                        IconButton(onClick = leave) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                         }
                     },
@@ -148,6 +168,11 @@ fun ScanScreen(
                 OutlinedButton(onClick = { launchPicker() }, enabled = !scan.busy, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.scan_choose_photo))
                 }
+                if (scan.lines.isNotEmpty()) {
+                    TextButton(onClick = { backToCapture = false }, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.scan_back_to_text))
+                    }
+                }
                 if (scan.busy) Text(stringResource(R.string.cleanup_reading), style = MaterialTheme.typography.bodyMedium)
                 if (scan.readFailed) {
                     Text(
@@ -155,6 +180,11 @@ fun ScanScreen(
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.error,
                     )
+                    if (scan.lines.isEmpty()) {
+                        TextButton(onClick = { showPaste = true }, modifier = Modifier.fillMaxWidth()) {
+                            Text(stringResource(R.string.scan_paste_text))
+                        }
+                    }
                 }
                 Text(
                     stringResource(R.string.add_privacy),
@@ -166,9 +196,36 @@ fun ScanScreen(
     } else {
         CleanupScreen(
             viewModel = scanViewModel,
-            onBack = onBack,
+            onBack = { backToCapture = true },
             onContinue = { scanViewModel.continueImport(logScan = true) },
             onAddPage = { showSources = true },
+        )
+    }
+
+    if (showPaste) {
+        AlertDialog(
+            onDismissRequest = { showPaste = false },
+            title = { Text(stringResource(R.string.scan_paste_title)) },
+            text = {
+                OutlinedTextField(
+                    value = pasteText,
+                    onValueChange = { pasteText = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 4,
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        scanViewModel.startFromText(pasteText)
+                        showPaste = false
+                        pasteText = ""
+                        backToCapture = false
+                    },
+                    enabled = pasteText.isNotBlank(),
+                ) { Text(stringResource(R.string.scan_paste_use)) }
+            },
+            dismissButton = { TextButton(onClick = { showPaste = false }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 

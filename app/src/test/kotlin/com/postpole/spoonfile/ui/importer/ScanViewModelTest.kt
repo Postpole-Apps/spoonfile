@@ -1,6 +1,8 @@
 package com.postpole.spoonfile.ui.importer
 
 import android.net.Uri
+import androidx.lifecycle.SavedStateHandle
+import com.postpole.spoonfile.importer.ocr.ScanPhotoCache
 import com.postpole.spoonfile.analytics.Analytics
 import com.postpole.spoonfile.importer.ocr.LineRole
 import com.postpole.spoonfile.importer.ocr.OcrEngine
@@ -33,6 +35,15 @@ class ScanViewModelTest {
             if (fail) throw IllegalStateException("boom")
             return lines
         }
+
+        override fun close() = Unit
+    }
+
+    private class FakeCache : ScanPhotoCache {
+        var clears = 0
+        override fun clear() {
+            clears++
+        }
     }
 
     private class FakeReader : PagePhotoReader {
@@ -56,7 +67,9 @@ class ScanViewModelTest {
 
     @After fun tearDown() = Dispatchers.resetMain()
 
-    private fun vm() = ScanViewModel(ocr, FakeReader(), analytics)
+    private val cache = FakeCache()
+
+    private fun vm(handle: SavedStateHandle = SavedStateHandle()) = ScanViewModel(ocr, FakeReader(), analytics, cache, handle)
 
     private fun page(n: Int): Uri = Uri.parse("content://test/page$n")
 
@@ -96,6 +109,55 @@ class ScanViewModelTest {
         assertFalse(vm.state.value.busy)
         // Analytics carry only the source and the result.
         assertEquals(mapOf("import_source" to "ocr", "result" to "ocr_failed"), analytics.events.single().second)
+    }
+
+    @Test fun emptyOcrAddsNoPageAndKeepsExistingPagesAndLines() {
+        val vm = vm()
+        vm.addPage(page(1))
+        val before = vm.state.value
+        ocr.lines = emptyList()
+        vm.addPage(page(2))
+        val s = vm.state.value
+        assertTrue(s.readFailed)
+        assertFalse(s.busy)
+        assertEquals(before.pages, s.pages)
+        assertEquals(before.lines, s.lines)
+        assertTrue(s.canAddPage)
+    }
+
+    @Test fun emptyOcrOnFirstPageAddsNoPage() {
+        ocr.lines = emptyList()
+        val vm = vm()
+        vm.addPage(page(1))
+        assertTrue(vm.state.value.readFailed)
+        assertTrue(vm.state.value.pages.isEmpty())
+        assertTrue(vm.state.value.lines.isEmpty())
+    }
+
+    @Test fun stateSurvivesProcessDeath() {
+        val handle = SavedStateHandle()
+        val first = vm(handle)
+        first.addPage(page(1))
+        first.setUsePagePhoto(true)
+        first.setRole(first.state.value.lines[3].id, LineRole.IGNORE)
+        val saved = first.state.value
+
+        val restored = vm(SavedStateHandle(handle.keys().associateWith { handle.get<Any>(it) }))
+        assertEquals(saved.pages, restored.state.value.pages)
+        assertEquals(saved.lines, restored.state.value.lines)
+        assertTrue(restored.state.value.usePagePhoto)
+        // New lines keep getting fresh ids after a restore.
+        restored.addPage(page(2))
+        assertEquals(restored.state.value.lines.size, restored.state.value.lines.map { it.id }.toSet().size)
+    }
+
+    @Test fun discardScanForgetsEverythingAndClearsCache() {
+        val vm = vm()
+        vm.addPage(page(1))
+        vm.discardScan()
+        assertTrue(vm.state.value.pages.isEmpty())
+        assertTrue(vm.state.value.lines.isEmpty())
+        assertEquals(1, cache.clears)
     }
 
     @Test fun roleEdit() {
