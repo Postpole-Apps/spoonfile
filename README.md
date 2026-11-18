@@ -1,6 +1,6 @@
 # Spoonfile
 
-Spoonfile is a recipe organizer you pay for once. Your recipes stay on your device: no account, no ads.
+Spoonfile is a recipe organizer you pay for once. Your data is stored on your device: no account needed.
 
 Package: `com.postpole.spoonfile`. Free up to 75 recipes; Pro is a one-time purchase.
 
@@ -29,7 +29,7 @@ The brand palette (seed `#8E6BD1`) is in `ui/theme/Theme.kt`; Material You dynam
 A maintainer must copy `ci-templates/ci.yml` and `ci-templates/release.yml` to `.github/workflows/` (the bot cannot push there).
 
 ## Analytics and crash reporting (required)
-Google Analytics for Firebase (GA4) and Crashlytics are wired through the `Analytics` interface. Without `app/google-services.json` (git-ignored) a no-op `Analytics` is used; with it, the google-services / crashlytics plugins are applied automatically. Ad ID collection is intentionally left enabled for Google Ads conversion tracking. `privacy_policy_url` (still a TODO) and `support_email` live in `res/values/app_config.xml`.
+Google Analytics for Firebase (GA4) and Crashlytics are wired through the `Analytics` interface. Without `app/google-services.json` (git-ignored) a no-op `Analytics` is used; with it, the google-services / crashlytics plugins are applied automatically. Ad ID collection is intentionally left enabled for Google Ads conversion tracking. `privacy_policy_url` (done: https://pocket-ledger-postpole.web.app/spoonfile/privacy) and `support_email` live in `res/values/app_config.xml`.
 
 ## Backup
 Settings > Back up to file / Restore from backup file use the Storage Access Framework (no storage permissions) and a versioned JSON format (`BackupRepository`). Android Auto Backup is off (`allowBackup=false` plus explicit `data_extraction_rules.xml`).

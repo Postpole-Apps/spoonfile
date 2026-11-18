@@ -16,7 +16,7 @@ DE, FR and ES drafts below are machine-assisted translations and are marked **ne
 
 recipe organizer, recipe keeper, recipe manager, save recipes, recipe saver, recipe box, cookbook,
 my recipes, family recipes, recipe card, scan recipe, import recipes, grocery list, shopping list,
-pay once, no subscription, no ads
+pay once, no subscription
 
 "Family recipes" means recipes from your family. The app has no family sharing.
 
@@ -32,7 +32,7 @@ Save recipes from any website or cookbook. Your data is stored on your device.
 
 ### Full description
 
-Spoonfile is a recipe organizer you pay for once. Save recipes from any recipe website, scan a page from your cookbook, or type in family recipes. Your data is stored on your device; no account needed and no ads.
+Spoonfile is a recipe organizer you pay for once. Save recipes from any recipe website, scan a page from your cookbook, or type in family recipes. Your data is stored on your device; no account needed.
 
 • Save from any website: share a link from your browser and Spoonfile pulls out the ingredients and steps.
 • Scan cookbook pages with your camera.
@@ -55,7 +55,7 @@ Rezepte speichern. Deine Daten werden auf deinem Gerät gespeichert.
 
 ### Full description
 
-Spoonfile ist ein Rezept-Organizer, den du nur einmal bezahlst. Speichere Rezepte von jeder Rezeptwebsite, scanne eine Seite aus deinem Kochbuch oder tippe Familienrezepte ein. Deine Daten werden auf deinem Gerät gespeichert; kein Konto nötig und keine Werbung.
+Spoonfile ist ein Rezept-Organizer, den du nur einmal bezahlst. Speichere Rezepte von jeder Rezeptwebsite, scanne eine Seite aus deinem Kochbuch oder tippe Familienrezepte ein. Deine Daten werden auf deinem Gerät gespeichert; kein Konto nötig.
 
 • Von jeder Website speichern: Teile einen Link aus deinem Browser, und Spoonfile liest Zutaten und Schritte heraus.
 • Kochbuchseiten mit der Kamera scannen.
@@ -78,7 +78,7 @@ Recettes du web et des livres. Vos données sont stockées sur votre appareil.
 
 ### Full description
 
-Spoonfile est un carnet de recettes que vous payez une seule fois. Enregistrez des recettes depuis n'importe quel site, scannez une page de votre livre de cuisine ou saisissez les recettes de famille. Vos données sont stockées sur votre appareil ; aucun compte requis et aucune publicité.
+Spoonfile est un carnet de recettes que vous payez une seule fois. Enregistrez des recettes depuis n'importe quel site, scannez une page de votre livre de cuisine ou saisissez les recettes de famille. Vos données sont stockées sur votre appareil ; aucun compte requis.
 
 • Enregistrez depuis n'importe quel site : partagez un lien depuis votre navigateur et Spoonfile en extrait les ingrédients et les étapes.
 • Scannez les pages de vos livres de cuisine avec l'appareil photo.
@@ -101,7 +101,7 @@ Guarda recetas de webs y libros. Tus datos se almacenan en tu dispositivo.
 
 ### Full description
 
-Spoonfile es un organizador de recetas que pagas una sola vez. Guarda recetas de cualquier web de recetas, escanea una página de tu libro de cocina o escribe las recetas de la familia. Tus datos se almacenan en tu dispositivo; sin cuenta y sin anuncios.
+Spoonfile es un organizador de recetas que pagas una sola vez. Guarda recetas de cualquier web de recetas, escanea una página de tu libro de cocina o escribe las recetas de la familia. Tus datos se almacenan en tu dispositivo; sin cuenta.
 
 • Guarda desde cualquier web: comparte un enlace desde tu navegador y Spoonfile extrae los ingredientes y los pasos.
 • Escanea páginas de libros de cocina con la cámara.
