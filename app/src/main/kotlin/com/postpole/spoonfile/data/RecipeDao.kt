@@ -43,6 +43,10 @@ abstract class RecipeDao {
     @Query("SELECT * FROM recipes WHERE uid = :uid LIMIT 1")
     abstract suspend fun getByUid(uid: String): RecipeEntity?
 
+    /** Just the fields the bulk import needs to spot recipes that are already saved. */
+    @Query("SELECT uid, title, sourceName, sourceUrl FROM recipes")
+    abstract suspend fun dedupeKeys(): List<DedupeKey>
+
     @Query("SELECT * FROM recipes WHERE id = :id")
     abstract suspend fun getById(id: Long): RecipeEntity?
 

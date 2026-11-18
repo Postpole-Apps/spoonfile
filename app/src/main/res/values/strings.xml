@@ -86,6 +86,43 @@
     <string name="stub_paste_link">Paste link</string>
     <string name="stub_scan">Scan a page</string>
     <string name="stub_import_file">Import recipe file</string>
+    <!-- Import a recipe file -->
+    <string name="file_choose_prompt">Choose a recipe file from another app. Nothing is saved until you confirm the list.</string>
+    <string name="file_choose_action">Choose file</string>
+    <string name="file_reading">Reading the file…</string>
+    <string name="file_error_not_zip">That file isn\'t a recipe file. Choose the file you exported from the other app.</string>
+    <string name="file_error_unreadable">Couldn\'t read that file. Nothing was saved.</string>
+    <string name="file_error_empty">No recipes were found in that file.</string>
+    <string name="file_choose_another">Choose another file</string>
+    <plurals name="file_count">
+        <item quantity="one">%d recipe in this file</item>
+        <item quantity="other">%d recipes in this file</item>
+    </plurals>
+    <plurals name="file_unreadable_note">
+        <item quantity="one">%d entry couldn\'t be read and is left out.</item>
+        <item quantity="other">%d entries couldn\'t be read and are left out.</item>
+    </plurals>
+    <string name="file_truncated_note">This file is very large, so only part of it was read.</string>
+    <string name="file_clear_all">Clear all</string>
+    <string name="file_already_in">Already in Spoonfile</string>
+    <string name="file_free_room">%1$d recipes fit in the free version — you have room for %2$d. Unlock Pro to import all %3$d.</string>
+    <string name="file_unlock_pro">Unlock Pro</string>
+    <plurals name="file_import_button">
+        <item quantity="one">Import %d recipe</item>
+        <item quantity="other">Import %d recipes</item>
+    </plurals>
+    <string name="file_importing">Importing %1$d of %2$d…</string>
+    <string name="file_summary_title">Import finished</string>
+    <string name="file_summary_imported">Imported: %d</string>
+    <string name="file_summary_skipped">Skipped: %d</string>
+    <string name="file_summary_failed">Failed: %d</string>
+    <string name="file_reason">%1$s: %2$d</string>
+    <string name="file_reason_not_gzip">Unreadable entry</string>
+    <string name="file_reason_too_large">Entry too large</string>
+    <string name="file_reason_invalid">Damaged recipe data</string>
+    <string name="file_reason_no_title">Missing title</string>
+    <string name="file_reason_save">Couldn\'t be saved</string>
+    <string name="file_done">Done</string>
     <string name="stub_coming_soon">This part is on its way.</string>
 
     <!-- Detail -->

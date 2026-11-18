@@ -27,6 +27,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.postpole.spoonfile.R
 import com.postpole.spoonfile.ui.importer.ImportLinkScreen
+import com.postpole.spoonfile.ui.importer.PaprikaImportScreen
 import com.postpole.spoonfile.ui.pro.ProScreen
 import com.postpole.spoonfile.ui.recipe.CookModeScreen
 import com.postpole.spoonfile.ui.recipe.RecipeDetailScreen
@@ -142,7 +143,9 @@ fun AppNavHost(
             )
         }
         composable(Routes.SCAN) { StubScreen(R.string.stub_scan, R.string.stub_coming_soon) { navController.popBackStack() } }
-        composable(Routes.IMPORT_FILE) { StubScreen(R.string.stub_import_file, R.string.stub_coming_soon) { navController.popBackStack() } }
+        composable(Routes.IMPORT_FILE) {
+            PaprikaImportScreen(onBack = { navController.popBackStack() }, onOpenPro = { openPro() })
+        }
     }
     // After the NavHost so its graph is set before the first navigate (a link can arrive on a cold start).
     LaunchedEffect(sharedText) {
