@@ -73,7 +73,7 @@
     <string name="add_type_it_in_hint">Schreibe das Rezept selbst</string>
     <string name="add_import_file">Rezeptdatei importieren</string>
     <string name="add_import_file_hint">Rezeptdatei aus einer anderen App</string>
-    <string name="add_privacy">Deine Rezepte bleiben auf deinem Gerät</string>
+    <string name="add_privacy">Deine Daten werden auf deinem Gerät gespeichert</string>
     <!-- Import from a link -->
     <string name="import_link_label">Link zur Rezeptseite</string>
     <string name="import_link_invalid">Das sieht nicht nach einem Weblink aus. Füge die vollständige Adresse der Rezeptseite ein.</string>

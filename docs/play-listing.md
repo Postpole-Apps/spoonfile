@@ -8,7 +8,7 @@ section, with the text directly under them. Title limit 30 characters, short des
 
 **Contact email:** admin@postpole.com
 
-**Privacy policy URL:** TODO until the Postpole page is published.
+**Privacy policy URL:** https://pocket-ledger-postpole.web.app/spoonfile/privacy
 
 DE, FR and ES drafts below are machine-assisted translations and are marked **needs native review**.
 
@@ -28,11 +28,11 @@ Spoonfile: Recipe Organizer
 
 ### Short description
 
-Save recipes from any website or cookbook. Pay once. Recipes stay on your phone.
+Save recipes from any website or cookbook. Your data is stored on your device.
 
 ### Full description
 
-Spoonfile is a recipe organizer you pay for once. Save recipes from any recipe website, scan a page from your cookbook, or type in family recipes. Your recipes stay on your phone; no account needed and no ads.
+Spoonfile is a recipe organizer you pay for once. Save recipes from any recipe website, scan a page from your cookbook, or type in family recipes. Your data is stored on your device; no account needed and no ads.
 
 • Save from any website: share a link from your browser and Spoonfile pulls out the ingredients and steps.
 • Scan cookbook pages with your camera.
@@ -51,11 +51,11 @@ Spoonfile: Rezept-Organizer
 
 ### Short description
 
-Rezepte aus Web und Kochbuch speichern. Einmal zahlen. Bleibt auf deinem Handy.
+Rezepte speichern. Deine Daten werden auf deinem Gerät gespeichert.
 
 ### Full description
 
-Spoonfile ist ein Rezept-Organizer, den du nur einmal bezahlst. Speichere Rezepte von jeder Rezeptwebsite, scanne eine Seite aus deinem Kochbuch oder tippe Familienrezepte ein. Deine Rezepte bleiben auf deinem Handy; kein Konto nötig und keine Werbung.
+Spoonfile ist ein Rezept-Organizer, den du nur einmal bezahlst. Speichere Rezepte von jeder Rezeptwebsite, scanne eine Seite aus deinem Kochbuch oder tippe Familienrezepte ein. Deine Daten werden auf deinem Gerät gespeichert; kein Konto nötig und keine Werbung.
 
 • Von jeder Website speichern: Teile einen Link aus deinem Browser, und Spoonfile liest Zutaten und Schritte heraus.
 • Kochbuchseiten mit der Kamera scannen.
@@ -74,11 +74,11 @@ Spoonfile : Carnet de recettes
 
 ### Short description
 
-Gardez vos recettes du web et des livres. Paiement unique. Sur votre téléphone.
+Recettes du web et des livres. Vos données sont stockées sur votre appareil.
 
 ### Full description
 
-Spoonfile est un carnet de recettes que vous payez une seule fois. Enregistrez des recettes depuis n'importe quel site, scannez une page de votre livre de cuisine ou saisissez les recettes de famille. Vos recettes restent sur votre téléphone ; aucun compte requis et aucune publicité.
+Spoonfile est un carnet de recettes que vous payez une seule fois. Enregistrez des recettes depuis n'importe quel site, scannez une page de votre livre de cuisine ou saisissez les recettes de famille. Vos données sont stockées sur votre appareil ; aucun compte requis et aucune publicité.
 
 • Enregistrez depuis n'importe quel site : partagez un lien depuis votre navigateur et Spoonfile en extrait les ingrédients et les étapes.
 • Scannez les pages de vos livres de cuisine avec l'appareil photo.
@@ -97,11 +97,11 @@ Spoonfile: Libro de recetas
 
 ### Short description
 
-Guarda recetas de webs y libros de cocina. Pago único. Se quedan en tu teléfono.
+Guarda recetas de webs y libros. Tus datos se almacenan en tu dispositivo.
 
 ### Full description
 
-Spoonfile es un organizador de recetas que pagas una sola vez. Guarda recetas de cualquier web de recetas, escanea una página de tu libro de cocina o escribe las recetas de la familia. Tus recetas se quedan en tu teléfono; sin cuenta y sin anuncios.
+Spoonfile es un organizador de recetas que pagas una sola vez. Guarda recetas de cualquier web de recetas, escanea una página de tu libro de cocina o escribe las recetas de la familia. Tus datos se almacenan en tu dispositivo; sin cuenta y sin anuncios.
 
 • Guarda desde cualquier web: comparte un enlace desde tu navegador y Spoonfile extrae los ingredientes y los pasos.
 • Escanea páginas de libros de cocina con la cámara.
@@ -127,4 +127,4 @@ Paprika es una marca de su propietario; esta aplicación no está afiliada a ell
 - Data is encrypted in transit: yes.
 - Analytics events carry only types, counts and buckets, never URLs, domains, titles or ingredient text.
 - Fetching a recipe page connects the phone directly to that website. Mention this in the privacy policy.
-- No accounts and no backend: recipes stay on the device.
+- No accounts and no backend: your data is stored on your device.
