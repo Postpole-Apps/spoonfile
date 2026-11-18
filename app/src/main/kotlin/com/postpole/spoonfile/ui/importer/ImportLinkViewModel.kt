@@ -15,6 +15,7 @@ import com.postpole.spoonfile.data.CategoryEntity
 import com.postpole.spoonfile.data.RecipeEntity
 import com.postpole.spoonfile.data.RecipeOrigin
 import com.postpole.spoonfile.data.RecipeRepository
+import com.postpole.spoonfile.importer.ocr.CleanupController
 import com.postpole.spoonfile.importer.web.FetchResult
 import com.postpole.spoonfile.importer.web.ImportedLine
 import com.postpole.spoonfile.importer.web.ImportedRecipe
@@ -64,6 +65,9 @@ sealed interface ImportState {
 
     /** The page loaded but holds no recipe data. */
     data object NoRecipe : ImportState
+
+    /** Pasted page text is being sorted into title, ingredients and steps (the same cleanup as a scan). */
+    data object Cleanup : ImportState
 }
 
 sealed interface ImportEvent {
@@ -73,13 +77,6 @@ sealed interface ImportEvent {
     data object TypeItIn : ImportEvent
     data object SaveFailed : ImportEvent
 }
-
-/**
- * Stub for the shared line cleanup that the scan import (R5) provides: for now, trims and drops blank lines.
- * R5 replaces this with the same cleanup the OCR text uses.
- */
-internal fun cleanPastedLines(text: String): List<String> =
-    text.lines().map { it.trim() }.filter { it.isNotEmpty() }
 
 @HiltViewModel
 class ImportLinkViewModel @Inject constructor(
@@ -111,6 +108,9 @@ class ImportLinkViewModel @Inject constructor(
     val categories: StateFlow<List<CategoryEntity>> = categoryDao.observeAllWithCounts()
         .map { list -> list.map { it.category } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** Cleanup of the pasted page text (shared with the page scan). */
+    val cleanup = CleanupController()
 
     private val _events = Channel<ImportEvent>(Channel.BUFFERED)
     val events: Flow<ImportEvent> = _events.receiveAsFlow()
@@ -185,21 +185,48 @@ class ImportLinkViewModel @Inject constructor(
         _pasted.value = value
     }
 
-    /** "Open the page and copy the text": the pasted text becomes the preview's notes until R5's cleanup is wired in. */
+    /** "Open the page and copy the text": the pasted text goes through the same cleanup screen as a scanned page. */
     fun usePastedText() {
-        val lines = cleanPastedLines(_pasted.value)
+        val lines = _pasted.value.lines().map { it.trim() }.filter { it.isNotEmpty() }
         if (lines.isEmpty()) return
+        cleanup.reset(lines)
+        _state.value = ImportState.Cleanup
+    }
+
+    /** Back from the cleanup to the pasted text. */
+    fun backToPastedText() {
+        if (_state.value == ImportState.Cleanup) _state.value = ImportState.NoRecipe
+    }
+
+    /** Cleanup is done: show the preview with the sorted lines. */
+    fun continueFromCleanup() {
         origin = RecipeOrigin.PASTE
         photoBytes = null
         _photo.value = null
         _selectedSuggestions.value = emptySet()
-        _form.value = RecipeEditForm(
-            notes = lines.joinToString("\n"),
-            sourceName = hostOf(currentUrl).orEmpty(),
-            sourceUrl = currentUrl.orEmpty(),
-            loaded = true,
-        )
+        _form.value = cleanup.state.value.toForm(sourceName = hostOf(currentUrl).orEmpty(), sourceUrl = currentUrl.orEmpty())
         _state.value = ImportState.Preview(emptyList())
+    }
+
+    /** A scanned page was cleaned up by the scan screen: show the preview, with the page photo if the user chose it. */
+    fun startFromScan(form: RecipeEditForm, photo: ByteArray?) {
+        origin = RecipeOrigin.OCR
+        currentUrl = null
+        _selectedSuggestions.value = emptySet()
+        _form.value = form
+        photoBytes = null
+        _photo.value = null
+        _state.value = ImportState.Preview(emptyList())
+        if (photo != null) {
+            job?.cancel()
+            job = viewModelScope.launch {
+                val preview = withContext(Dispatchers.Default) { decodePreview(photo) }
+                if (preview != null) {
+                    photoBytes = photo
+                    _photo.value = preview
+                }
+            }
+        }
     }
 
     fun typeItIn() {

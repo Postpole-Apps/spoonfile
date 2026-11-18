@@ -103,6 +103,18 @@ fun ImportLinkScreen(
         return
     }
 
+    if (current is ImportState.Cleanup) {
+        BackHandler { viewModel.backToPastedText() }
+        CleanupScreen(
+            title = stringResource(R.string.cleanup_paste_title),
+            controller = viewModel.cleanup,
+            pages = null,
+            onBack = viewModel::backToPastedText,
+            onContinue = viewModel::continueFromCleanup,
+        )
+        return
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -124,7 +136,7 @@ fun ImportLinkScreen(
                 ImportState.Checking, ImportState.Loading -> Importing(onCancel = viewModel::cancel)
                 is ImportState.LoadFailed -> LoadFailedCard(canRetry = current.canRetry, onRetry = viewModel::retry)
                 ImportState.NoRecipe -> NoRecipe(viewModel)
-                is ImportState.Preview -> Unit
+                is ImportState.Preview, ImportState.Cleanup -> Unit
             }
         }
     }

@@ -28,6 +28,7 @@ import androidx.navigation.navArgument
 import com.postpole.spoonfile.R
 import com.postpole.spoonfile.ui.importer.ImportLinkScreen
 import com.postpole.spoonfile.ui.importer.PaprikaImportScreen
+import com.postpole.spoonfile.ui.importer.ScanScreen
 import com.postpole.spoonfile.ui.pro.ProScreen
 import com.postpole.spoonfile.ui.recipe.CookModeScreen
 import com.postpole.spoonfile.ui.recipe.RecipeDetailScreen
@@ -142,7 +143,15 @@ fun AppNavHost(
                 onOpenPro = { openPro() },
             )
         }
-        composable(Routes.SCAN) { StubScreen(R.string.stub_scan, R.string.stub_coming_soon) { navController.popBackStack() } }
+        composable(Routes.SCAN) {
+            ScanScreen(
+                onBack = { navController.popBackStack() },
+                onOpenRecipe = { id ->
+                    navController.navigate(Routes.recipe(id)) { popUpTo(Routes.SCAN) { inclusive = true } }
+                },
+                onOpenPro = { openPro() },
+            )
+        }
         composable(Routes.IMPORT_FILE) {
             PaprikaImportScreen(onBack = { navController.popBackStack() }, onOpenPro = { openPro() })
         }

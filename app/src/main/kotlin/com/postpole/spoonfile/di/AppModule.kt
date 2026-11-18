@@ -18,6 +18,10 @@ import com.postpole.spoonfile.data.CategoryDao
 import com.postpole.spoonfile.data.ItemDao
 import com.postpole.spoonfile.data.RecipeDao
 import com.postpole.spoonfile.data.ShoppingDao
+import com.postpole.spoonfile.importer.ocr.ContentResolverPageReader
+import com.postpole.spoonfile.importer.ocr.MlKitOcrEngine
+import com.postpole.spoonfile.importer.ocr.OcrEngine
+import com.postpole.spoonfile.importer.ocr.PageReader
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -37,6 +41,12 @@ object AppModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, "app.db").build()
+
+    @Provides
+    fun provideOcrEngine(engine: MlKitOcrEngine): OcrEngine = engine
+
+    @Provides
+    fun providePageReader(reader: ContentResolverPageReader): PageReader = reader
 
     @Provides
     fun provideItemDao(db: AppDatabase): ItemDao = db.itemDao()
