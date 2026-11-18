@@ -158,6 +158,7 @@ dependencies {
     implementation(libs.play.app.update)
     implementation(libs.okhttp)
     implementation(libs.jsoup)
+    implementation(libs.mlkit.text.recognition)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(libs.junit)

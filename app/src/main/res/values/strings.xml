@@ -237,4 +237,30 @@
     <string name="update_ready_message">A new version has been downloaded. Restart to finish installing it.</string>
     <string name="update_restart">Restart</string>
     <string name="update_later">Later</string>
+
+    <!-- Scan a page (R5) -->
+    <string name="scan_title">Scan a page</string>
+    <string name="scan_intro">Take a photo of a cookbook page, or choose one from your photos. The text is read on your phone.</string>
+    <string name="scan_take_photo">Take a photo</string>
+    <string name="scan_choose_photo">Choose from photos</string>
+    <string name="scan_no_camera">No camera app is available. Choose a photo instead.</string>
+    <string name="scan_add_source_title">Add a page</string>
+    <string name="cleanup_title">Tidy up the text</string>
+    <string name="cleanup_continue">Continue</string>
+    <string name="cleanup_add_page">Add page</string>
+    <string name="cleanup_page_count">%1$d of %2$d pages</string>
+    <string name="cleanup_reading">Reading the page…</string>
+    <string name="cleanup_page_cd">Scanned page</string>
+    <string name="cleanup_use_photo">Use page photo as recipe photo</string>
+    <string name="cleanup_read_failed">Couldn\'t find any text on that photo. Try again with a clearer, well-lit page.</string>
+    <string name="cleanup_hint">Tap a line to say what it is. Nothing is saved yet.</string>
+    <string name="cleanup_merge">Merge with next</string>
+    <string name="cleanup_split">Split line</string>
+    <string name="cleanup_edit">Edit line</string>
+    <string name="cleanup_done">Done</string>
+    <string name="role_title">Title</string>
+    <string name="role_ingredient">Ingredient</string>
+    <string name="role_step">Step</string>
+    <string name="role_note">Note</string>
+    <string name="role_ignore">Ignore</string>
 </resources>
