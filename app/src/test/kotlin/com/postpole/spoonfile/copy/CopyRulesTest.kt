@@ -137,6 +137,18 @@ class CopyRulesTest {
         }
     }
 
+    @Test
+    fun phoneTransferNoteIsTheExactSentenceAndNeverMentionsCloud() {
+        val expected = "Moving to a new phone? Android\\'s phone-to-phone transfer brings your recipes and photos along. " +
+            "Keep a backup file too, just in case."
+        for (file in stringsFiles()) {
+            val line = file.readLines().first { it.contains("name=\"settings_phone_transfer\"") }
+            assertFalse("${file.path}: mentions cloud", line.contains("cloud", ignoreCase = true))
+        }
+        val en = File(resDir, "values/strings.xml").readText()
+        assertTrue("en-US settings_phone_transfer text changed", en.contains(">$expected</string>"))
+    }
+
     // --- docs/play-listing.md ---
 
     @Test
