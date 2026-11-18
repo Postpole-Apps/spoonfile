@@ -30,6 +30,15 @@ internal object CopyRules {
         "sin internet", "modo avión",
     )
 
+    /** Ads are planned, so the copy must not promise an ad-free app (en / de / fr / es). */
+    private val noAdsClaims = Regex(
+        "no ads|ad-free|ad free|without ads|ohne werbung|keine werbung|werbefrei|" +
+            "aucune publicité|sans publicité|sin anuncios|sin publicidad",
+        RegexOption.IGNORE_CASE,
+    )
+
+    fun noAdsClaims(text: String): List<String> = noAdsClaims.findAll(text).map { it.value }.toList()
+
     /** Hard-coded prices: the price may only ever come from Play (`BillingRepository.price`). */
     private val priceLike = Regex("""\$\d|€\d|£\d|9\.99""")
 
@@ -165,10 +174,26 @@ class CopyRulesTest {
     }
 
     @Test
+    fun listingAndStringsMakeNoNoAdsClaims() {
+        assertEquals(emptyList<String>(), CopyRules.noAdsClaims(listing))
+        for (file in stringsFiles()) {
+            assertEquals(file.path, emptyList<String>(), CopyRules.noAdsClaims(file.readText()))
+        }
+    }
+
+    @Test
+    fun noAdsClaimsAreCaughtInEveryLanguage() {
+        listOf("No ads", "An AD-FREE app", "Without ads", "Keine Werbung", "Ohne Werbung", "werbefrei",
+            "aucune publicité", "Sans publicité", "sin anuncios", "Sin publicidad")
+            .forEach { assertTrue(it, CopyRules.noAdsClaims(it).isNotEmpty()) }
+        assertTrue(CopyRules.noAdsClaims("Your data is stored on your device").isEmpty())
+    }
+
+    @Test
     fun listingKeywordsAvoidMealPlannerAndHasTheRequiredOnes() {
         val text = listing.lowercase()
         assertFalse(text.contains("meal planner"))
-        listOf("recipe organizer", "recipe keeper", "recipe box", "pay once", "no subscription", "no ads", "shopping list")
+        listOf("recipe organizer", "recipe keeper", "recipe box", "pay once", "no subscription", "shopping list")
             .forEach { assertTrue("missing keyword $it", text.contains(it)) }
     }
 
