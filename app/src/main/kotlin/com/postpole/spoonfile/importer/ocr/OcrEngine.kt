@@ -6,6 +6,9 @@ import android.net.Uri
 interface OcrEngine {
     /** Lines in reading order (blocks top-to-bottom, then left-to-right). Throws if the image can't be read. */
     suspend fun recognize(uri: Uri): List<String>
+
+    /** Releases the recognizer when the scan flow ends. Safe to call more than once. */
+    fun close()
 }
 
 /** Reads the bytes of a page photo so it can become the recipe photo. Null if it can't be read. */

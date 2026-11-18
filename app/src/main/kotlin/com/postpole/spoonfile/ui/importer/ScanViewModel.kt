@@ -1,6 +1,7 @@
 package com.postpole.spoonfile.ui.importer
 
 import android.net.Uri
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.postpole.spoonfile.analytics.Analytics
@@ -10,6 +11,7 @@ import com.postpole.spoonfile.importer.ocr.LineRole
 import com.postpole.spoonfile.importer.ocr.LineRoleGuesser
 import com.postpole.spoonfile.importer.ocr.OcrEngine
 import com.postpole.spoonfile.importer.ocr.PagePhotoReader
+import com.postpole.spoonfile.importer.ocr.ScanCache
 import com.postpole.spoonfile.ui.recipe.RecipeEditForm
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -49,16 +51,26 @@ class ScanViewModel @Inject constructor(
     private val ocr: OcrEngine,
     private val photoReader: PagePhotoReader,
     private val analytics: Analytics,
+    private val scanCache: ScanCache,
+    private val handle: SavedStateHandle,
 ) : ViewModel() {
-    private val _state = MutableStateFlow(ScanUiState())
+    private val _state = MutableStateFlow(restore())
     val state: StateFlow<ScanUiState> = _state
 
     private val _events = Channel<ScanEvent>(Channel.BUFFERED)
     val events: Flow<ScanEvent> = _events.receiveAsFlow()
 
-    private var nextId = 0L
+    private var nextId = handle.get<Long>(KEY_NEXT_ID) ?: _state.value.lines.maxOfOrNull { it.id + 1 } ?: 0L
 
-    /** Reads a page photo and appends its lines. Ignored once [MAX_PAGES] pages are added. */
+    init {
+        // Keep what survives process death up to date: pages, lines and roles, and the "use page photo" flag.
+        viewModelScope.launch { _state.collect { save(it) } }
+    }
+
+    /**
+     * Reads a page photo and appends its lines. Ignored once [MAX_PAGES] pages are added.
+     * A photo with no text (or one that can't be read) adds no page and shows the retry message.
+     */
     fun addPage(uri: Uri) {
         val current = _state.value
         if (!current.canAddPage) return
@@ -66,12 +78,17 @@ class ScanViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val lines = ocr.recognize(uri)
+                if (lines.isEmpty()) {
+                    _state.update { it.copy(busy = false, readFailed = true) }
+                    logResult(RESULT_FAILED)
+                    return@launch
+                }
                 _state.update { s ->
                     s.copy(
                         pages = s.pages + uri,
                         lines = s.lines + toLines(lines, existing = s.lines),
                         busy = false,
-                        readFailed = lines.isEmpty() && s.lines.isEmpty(),
+                        readFailed = false,
                     )
                 }
             } catch (e: CancellationException) {
@@ -91,9 +108,41 @@ class ScanViewModel @Inject constructor(
         _state.value = ScanUiState(lines = toLines(lines, existing = emptyList()))
     }
 
-    /** Forgets the lines (leaving the cleanup screen), so the next visit starts from fresh text. */
+    /** Forgets the pages and lines (going back to the first step, or leaving), and deletes cached camera captures. */
     fun reset() {
         _state.value = ScanUiState()
+        scanCache.clear()
+    }
+
+    /** The recipe was saved: the cached camera captures are no longer needed. */
+    fun onSaved() = scanCache.clear()
+
+    override fun onCleared() {
+        ocr.close()
+        scanCache.clear()
+    }
+
+    private fun save(s: ScanUiState) {
+        handle[KEY_PAGES] = ArrayList(s.pages.map { it.toString() })
+        handle[KEY_IDS] = s.lines.map { it.id }.toLongArray()
+        handle[KEY_TEXTS] = ArrayList(s.lines.map { it.text })
+        handle[KEY_ROLES] = ArrayList(s.lines.map { it.role.name })
+        handle[KEY_USE_PHOTO] = s.usePagePhoto
+        handle[KEY_NEXT_ID] = nextId
+    }
+
+    private fun restore(): ScanUiState {
+        val ids = handle.get<LongArray>(KEY_IDS) ?: return ScanUiState()
+        val texts = handle.get<ArrayList<String>>(KEY_TEXTS).orEmpty()
+        val roles = handle.get<ArrayList<String>>(KEY_ROLES).orEmpty()
+        if (texts.size != ids.size || roles.size != ids.size) return ScanUiState()
+        return ScanUiState(
+            pages = handle.get<ArrayList<String>>(KEY_PAGES).orEmpty().map(Uri::parse),
+            lines = ids.indices.map { i ->
+                CleanupLine(ids[i], texts[i], LineRole.entries.firstOrNull { it.name == roles[i] } ?: LineRole.NOTE)
+            },
+            usePagePhoto = handle.get<Boolean>(KEY_USE_PHOTO) ?: false,
+        )
     }
 
     fun setUsePagePhoto(value: Boolean) = _state.update { it.copy(usePagePhoto = value) }
@@ -173,6 +222,12 @@ class ScanViewModel @Inject constructor(
 
     companion object {
         const val MAX_PAGES = 4
+        private const val KEY_PAGES = "scan_pages"
+        private const val KEY_IDS = "scan_line_ids"
+        private const val KEY_TEXTS = "scan_line_texts"
+        private const val KEY_ROLES = "scan_line_roles"
+        private const val KEY_USE_PHOTO = "scan_use_page_photo"
+        private const val KEY_NEXT_ID = "scan_next_id"
         const val SOURCE_OCR = "ocr"
         const val RESULT_OK = "ok"
         const val RESULT_FAILED = "ocr_failed"

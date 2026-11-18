@@ -23,6 +23,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -64,6 +65,8 @@ fun ScanScreen(
     val saveFailed = stringResource(R.string.import_save_failed)
     val noCamera = stringResource(R.string.scan_no_camera)
     var showSources by rememberSaveable { mutableStateOf(false) }
+    var showPaste by rememberSaveable { mutableStateOf(false) }
+    var pasteText by rememberSaveable { mutableStateOf("") }
     var pendingPhoto by rememberSaveable { mutableStateOf<String?>(null) }
 
     LaunchedEffect(scanViewModel) {
@@ -76,7 +79,10 @@ fun ScanScreen(
     LaunchedEffect(importViewModel) {
         importViewModel.events.collect { event ->
             when (event) {
-                is ImportEvent.Saved -> onOpenRecipe(event.id)
+                is ImportEvent.Saved -> {
+                    scanViewModel.onSaved()
+                    onOpenRecipe(event.id)
+                }
                 is ImportEvent.OpenRecipe -> onOpenRecipe(event.id)
                 ImportEvent.OpenPro -> onOpenPro()
                 ImportEvent.SaveFailed -> Toast.makeText(context, saveFailed, Toast.LENGTH_SHORT).show()
@@ -111,26 +117,34 @@ fun ScanScreen(
     }
 
     val previewing = import is ImportState.Preview
+    val atCapture = scan.pages.isEmpty() && scan.lines.isEmpty()
+    // Back goes one step: preview -> cleanup -> capture; only the capture step leaves the scan flow.
     val leave = {
-        importViewModel.discard()
+        scanViewModel.reset()
         onBack()
     }
-    BackHandler {
-        if (previewing) leave() else onBack()
+    val backToCapture = { scanViewModel.reset() }
+    val back = {
+        when {
+            previewing -> importViewModel.closePreview()
+            atCapture -> leave()
+            else -> backToCapture()
+        }
     }
+    BackHandler { back() }
 
     if (previewing) {
-        ImportPreviewScreen(emptyList(), onClose = leave, viewModel = importViewModel)
+        ImportPreviewScreen(emptyList(), onClose = { importViewModel.closePreview() }, viewModel = importViewModel)
         return
     }
 
-    if (scan.pages.isEmpty() && scan.lines.isEmpty()) {
+    if (atCapture) {
         Scaffold(
             topBar = {
                 TopAppBar(
                     title = { Text(stringResource(R.string.scan_title)) },
                     navigationIcon = {
-                        IconButton(onClick = onBack) {
+                        IconButton(onClick = { leave() }) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                         }
                     },
@@ -155,6 +169,9 @@ fun ScanScreen(
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.error,
                     )
+                    TextButton(onClick = { showPaste = true }, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.scan_paste_text))
+                    }
                 }
                 Text(
                     stringResource(R.string.add_privacy),
@@ -166,9 +183,36 @@ fun ScanScreen(
     } else {
         CleanupScreen(
             viewModel = scanViewModel,
-            onBack = onBack,
+            onBack = backToCapture,
             onContinue = { scanViewModel.continueImport(logScan = true) },
             onAddPage = { showSources = true },
+        )
+    }
+
+    if (showPaste) {
+        AlertDialog(
+            onDismissRequest = { showPaste = false },
+            title = { Text(stringResource(R.string.scan_paste_title)) },
+            text = {
+                OutlinedTextField(
+                    value = pasteText,
+                    onValueChange = { pasteText = it },
+                    label = { Text(stringResource(R.string.scan_paste_hint)) },
+                    minLines = 4,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        scanViewModel.startFromText(pasteText)
+                        showPaste = false
+                        pasteText = ""
+                    },
+                    enabled = pasteText.isNotBlank(),
+                ) { Text(stringResource(R.string.scan_paste_confirm)) }
+            },
+            dismissButton = { TextButton(onClick = { showPaste = false }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 

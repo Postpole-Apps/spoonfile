@@ -140,7 +140,6 @@
     <string name="file_reason_no_title">Titel fehlt</string>
     <string name="file_reason_save">Konnte nicht gespeichert werden</string>
     <string name="file_done">Fertig</string>
-    <string name="stub_coming_soon">Dieser Teil kommt bald.</string>
 
     <!-- Detail -->
     <string name="detail_favorite">Favorit</string>
@@ -283,6 +282,10 @@
     <string name="cleanup_page_cd">Gescannte Seite</string>
     <string name="cleanup_use_photo">Seitenfoto als Rezeptfoto verwenden</string>
     <string name="cleanup_read_failed">Auf diesem Foto wurde kein Text gefunden. Versuche es mit einer klareren, gut beleuchteten Seite erneut.</string>
+    <string name="scan_paste_text">Stattdessen Text einfügen</string>
+    <string name="scan_paste_title">Text einfügen</string>
+    <string name="scan_paste_hint">Rezepttext</string>
+    <string name="scan_paste_confirm">Weiter</string>
     <string name="cleanup_hint">Tippe auf eine Zeile, um festzulegen, was sie ist. Es wird noch nichts gespeichert.</string>
     <string name="cleanup_merge">Mit nächster verbinden</string>
     <string name="cleanup_split">Zeile teilen</string>

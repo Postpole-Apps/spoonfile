@@ -24,6 +24,10 @@ internal object CopyRules {
     private val banned = listOf(
         "offline", "hors ligne", "sin conexión",
         "no internet needed", "works without internet", "no data collected",
+        // de / fr / es synonyms of the same claim
+        "ohne Internet", "kein Internet", "Flugmodus", "ohne Netz",
+        "sans Internet", "sans connexion", "mode avion",
+        "sin internet", "modo avión",
     )
 
     /** Hard-coded prices: the price may only ever come from Play (`BillingRepository.price`). */
@@ -233,7 +237,10 @@ class CopyRulesTest {
 
     @Test
     fun bannedPhrasesAreCaughtInAnyCaseAndLanguage() {
-        listOf("Works OFFLINE", "Fonctionne hors ligne", "Funciona sin conexión", "No internet needed", "Works without internet", "No data collected")
+        listOf("Works OFFLINE", "Fonctionne hors ligne", "Funciona sin conexión", "No internet needed", "Works without internet", "No data collected",
+            "Funktioniert OHNE Internet", "Kein Internet nötig", "Auch im Flugmodus", "Läuft ohne Netz",
+            "Fonctionne sans Internet", "Sans connexion", "Même en mode avion",
+            "Funciona sin internet", "Incluso en modo avión")
             .forEach { assertTrue(it, CopyRules.bannedPhrases(it).isNotEmpty()) }
         assertTrue(CopyRules.bannedPhrases("Your recipes stay on your device").isEmpty())
     }
