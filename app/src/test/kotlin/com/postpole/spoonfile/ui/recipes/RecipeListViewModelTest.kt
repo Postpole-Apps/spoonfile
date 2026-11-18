@@ -15,6 +15,7 @@ import com.postpole.spoonfile.data.ImageStore
 import com.postpole.spoonfile.data.RecipeEntity
 import com.postpole.spoonfile.data.RecipeRepository
 import com.postpole.spoonfile.data.RecipeSort
+import com.postpole.spoonfile.data.SettingsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -70,7 +71,7 @@ class RecipeListViewModelTest {
         scope = CoroutineScope(Dispatchers.Unconfined + Job())
         val dataStore = PreferenceDataStoreFactory.create(scope = scope) { File(tmp.root, "t.preferences_pb") }
         val billing = BillingRepository(IdleGateway(), dataStore, scope, log = {})
-        vm = RecipeListViewModel(repo, db.categoryDao(), billing)
+        vm = RecipeListViewModel(repo, db.categoryDao(), billing, SettingsRepository(dataStore))
     }
 
     @After

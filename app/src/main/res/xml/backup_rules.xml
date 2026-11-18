@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 8 (API 26-27) has no device-transfer-only flag, so everything is excluded here: nothing is
+  backed up to the cloud. Phone-to-phone transfer of recipes and photos is set up in
+  res/xml-v28/backup_rules.xml (Android 9-11) and res/xml/data_extraction_rules.xml (Android 12+).
+-->
+<full-backup-content>
+    <exclude domain="root" />
+    <exclude domain="file" />
+    <exclude domain="database" />
+    <exclude domain="sharedpref" />
+    <exclude domain="external" />
+</full-backup-content>

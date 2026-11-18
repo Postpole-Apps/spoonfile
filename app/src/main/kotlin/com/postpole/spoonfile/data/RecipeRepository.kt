@@ -27,6 +27,11 @@ class RecipeRepository @Inject constructor(
 
     fun count(): Flow<Int> = dao.count()
 
+    suspend fun allDetails(): List<RecipeWithDetails> = dao.allDetails().map { it.ordered() }
+
+    /** The stored photo file for [name], or null when it no longer exists. */
+    fun photoFile(name: String): java.io.File? = images.resolve(name).takeIf { it.isFile }
+
     suspend fun getByUid(uid: String): RecipeEntity? = dao.getByUid(uid)
 
     suspend fun dedupeKeys(): List<DedupeKey> = dao.dedupeKeys()

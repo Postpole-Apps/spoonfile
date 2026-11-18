@@ -10,8 +10,10 @@ import com.postpole.spoonfile.analytics.AnalyticsParams
 import com.postpole.spoonfile.billing.BillingRepository
 import com.postpole.spoonfile.data.BackupRepository
 import com.postpole.spoonfile.data.InvalidBackupException
+import com.postpole.spoonfile.data.RecipeRepository
 import com.postpole.spoonfile.data.SettingsRepository
 import com.postpole.spoonfile.data.ThemeMode
+import com.postpole.spoonfile.exporter.PaprikaArchiveWriter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -32,8 +34,6 @@ sealed interface SettingsEvent {
     data class Imported(val count: Int) : SettingsEvent
     data object ImportInvalid : SettingsEvent
     data object ImportFailed : SettingsEvent
-    data object RestoreChecked : SettingsEvent
-    data object RestoreFailed : SettingsEvent
 }
 
 @HiltViewModel
@@ -41,14 +41,17 @@ class SettingsViewModel @Inject constructor(
     private val billing: BillingRepository,
     private val settings: SettingsRepository,
     private val backup: BackupRepository,
+    private val recipes: RecipeRepository,
     private val analytics: Analytics,
 ) : ViewModel() {
     val isPro: StateFlow<Boolean> = billing.isPro
 
     val themeMode: StateFlow<ThemeMode> = settings.themeMode
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ThemeMode.SYSTEM)
-    val defaultCurrency: StateFlow<String?> = settings.defaultCurrency
+    val lastBackupAt: StateFlow<Long?> = settings.lastBackupAt
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    val remindBackup: StateFlow<Boolean> = settings.remindBackup
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
 
     private val _events = Channel<SettingsEvent>(Channel.BUFFERED)
     val events: Flow<SettingsEvent> = _events.receiveAsFlow()
@@ -57,19 +60,24 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { settings.setThemeMode(mode) }
     }
 
-    fun setDefaultCurrency(code: String) {
-        viewModelScope.launch { settings.setDefaultCurrency(code) }
+    fun setRemindBackup(enabled: Boolean) {
+        viewModelScope.launch { settings.setRemindBackup(enabled) }
     }
 
-    fun restore() {
-        viewModelScope.launch {
-            _events.trySend(if (billing.restore()) SettingsEvent.RestoreChecked else SettingsEvent.RestoreFailed)
-        }
+    /** "Back up now": writes the `.zip` (data + photos) to [uri] and remembers the date. */
+    fun backUpNow(resolver: ContentResolver, uri: Uri) = export(resolver, uri, "zip") {
+        val count = backup.exportZip(it)
+        settings.setLastBackupAt(System.currentTimeMillis())
+        count
     }
 
-    fun exportJson(resolver: ContentResolver, uri: Uri) = export(resolver, uri, "json") { backup.exportJson(it) }
-
-    fun exportCsv(resolver: ContentResolver, uri: Uri) = export(resolver, uri, "csv") { backup.exportItemsCsv(it) }
+    /** "Export recipe file": all recipes with photos as a file another app can open. */
+    fun exportRecipeFile(resolver: ContentResolver, uri: Uri) = export(resolver, uri, "recipe_file") { out ->
+        val all = recipes.allDetails()
+        val count = PaprikaArchiveWriter().write(out, all) { name -> recipes.photoFile(name)?.readBytes() }
+        settings.setLastRecipeFileAt(System.currentTimeMillis())
+        count
+    }
 
     private fun export(
         resolver: ContentResolver,
@@ -83,12 +91,10 @@ class SettingsViewModel @Inject constructor(
                     val out = resolver.openOutputStream(uri, "wt") ?: error("Could not open $uri for writing")
                     out.use { write(it) }
                 }
-                if (format == "json") {
-                    analytics.logEvent(
-                        AnalyticsEvents.BACKUP_EXPORTED,
-                        mapOf(AnalyticsParams.FORMAT to format, AnalyticsParams.ITEM_COUNT to count),
-                    )
-                }
+                analytics.logEvent(
+                    AnalyticsEvents.BACKUP_EXPORTED,
+                    mapOf(AnalyticsParams.FORMAT to format, AnalyticsParams.ITEM_COUNT to count),
+                )
                 _events.trySend(SettingsEvent.Exported(count))
             } catch (e: CancellationException) {
                 throw e
@@ -99,12 +105,13 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun importJson(resolver: ContentResolver, uri: Uri) {
+    /** Restore is never limited by the free recipe cap. */
+    fun restoreBackup(resolver: ContentResolver, uri: Uri) {
         viewModelScope.launch {
             try {
                 val count = withContext(Dispatchers.IO) {
                     val input = resolver.openInputStream(uri) ?: error("Could not open $uri for reading")
-                    input.use { backup.importJson(it) }
+                    input.use { backup.importZip(it) }
                 }
                 analytics.logEvent(AnalyticsEvents.BACKUP_IMPORTED, mapOf(AnalyticsParams.ITEM_COUNT to count))
                 _events.trySend(SettingsEvent.Imported(count))
