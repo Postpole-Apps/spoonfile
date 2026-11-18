@@ -4,6 +4,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -397,7 +400,7 @@ private fun CategoryTiles(state: RecipeListUiState, onSelect: (Long?) -> Unit, o
 }
 
 @Composable
-private fun CategoryTile(label: String, shape: Shape, selected: Boolean, onClick: () -> Unit) {
+internal fun CategoryTile(label: String, shape: Shape, selected: Boolean, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         shape = shape,
@@ -405,12 +408,14 @@ private fun CategoryTile(label: String, shape: Shape, selected: Boolean, onClick
         contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondaryContainer,
         modifier = Modifier.size(96.dp),
     ) {
-        Box(Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
+        // Narrow side padding keeps the text area wide; one line, never wrapped, so a word can't be split.
+        Box(Modifier.fillMaxSize().padding(horizontal = 6.dp, vertical = 16.dp), contentAlignment = Alignment.Center) {
             Text(
                 label,
-                style = MaterialTheme.typography.labelLarge,
+                style = MaterialTheme.typography.labelMedium,
                 textAlign = TextAlign.Center,
-                maxLines = 2,
+                maxLines = 1,
+                softWrap = false,
                 overflow = TextOverflow.Ellipsis,
             )
         }
@@ -520,8 +525,19 @@ private fun BigButton(label: String, onClick: () -> Unit) {
 @Composable
 private fun AddRecipeSheet(onDismiss: () -> Unit, onAction: (AddAction) -> Unit) {
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState()) {
+        AddRecipeSheetContent(onAction)
+    }
+}
+
+/** Sheet body. [insets] (the navigation bar by default) keeps the footer clear of the gesture bar. */
+@Composable
+internal fun AddRecipeSheetContent(
+    onAction: (AddAction) -> Unit,
+    insets: WindowInsets = WindowInsets.navigationBars,
+) {
+    run {
         Column(
-            Modifier.padding(horizontal = 16.dp).padding(bottom = 24.dp),
+            Modifier.windowInsetsPadding(insets).padding(horizontal = 16.dp).padding(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(ConnectedGap),
         ) {
             Text(
