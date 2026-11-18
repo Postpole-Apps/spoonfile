@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Data backup is user-driven: Settings > "Back up to file" writes a JSON file via the Storage
-  Access Framework and "Restore from backup file" reads it back. Android Auto Backup and
-  device-to-device transfer are therefore excluded, so the Room database and the cached Pro flag
-  are never copied behind the user's back (Pro is re-verified with Google Play on every launch).
+  Android 12+ rules. Nothing goes to cloud backup. Phone-to-phone (device-transfer) copies only the
+  recipe database and the photo folder (images/). DataStore settings (datastore/) are deliberately not
+  included, so the cached Pro flag never travels with a transfer: Pro is re-verified with Google Play.
+  The same rule applies to Android 9-11 (res/xml-v28/backup_rules.xml) and Android 8 (res/xml/backup_rules.xml).
 -->
 <data-extraction-rules>
     <cloud-backup>
@@ -14,10 +14,14 @@
         <exclude domain="external" />
     </cloud-backup>
     <device-transfer>
+        <include domain="database" path="." />
+        <include domain="file" path="images/" />
+    </device-transfer>
+    <cross-platform-transfer platform="ios">
         <exclude domain="root" />
         <exclude domain="file" />
         <exclude domain="database" />
         <exclude domain="sharedpref" />
         <exclude domain="external" />
-    </device-transfer>
+    </cross-platform-transfer>
 </data-extraction-rules>

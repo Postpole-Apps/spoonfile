@@ -19,7 +19,6 @@ import com.postpole.spoonfile.billing.BillingRepository
 import com.postpole.spoonfile.billing.PlayBillingGateway
 import com.postpole.spoonfile.data.AppDatabase
 import com.postpole.spoonfile.data.CategoryDao
-import com.postpole.spoonfile.data.ItemDao
 import com.postpole.spoonfile.data.RecipeDao
 import com.postpole.spoonfile.data.ShoppingDao
 import dagger.Module
@@ -41,9 +40,6 @@ object AppModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, "app.db").build()
-
-    @Provides
-    fun provideItemDao(db: AppDatabase): ItemDao = db.itemDao()
 
     @Provides
     fun provideRecipeDao(db: AppDatabase): RecipeDao = db.recipeDao()

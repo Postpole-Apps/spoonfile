@@ -34,6 +34,38 @@ abstract class RecipeDao {
         sort: RecipeSort,
     ): Flow<List<RecipeEntity>>
 
+    @Transaction
+    @Query("SELECT * FROM recipes ORDER BY id")
+    abstract suspend fun allDetails(): List<RecipeWithDetails>
+
+    @Query("SELECT * FROM recipes ORDER BY id")
+    abstract suspend fun allRecipes(): List<RecipeEntity>
+
+    @Query("SELECT * FROM recipe_ingredients ORDER BY recipeId, position, id")
+    abstract suspend fun allIngredients(): List<IngredientEntity>
+
+    @Query("SELECT * FROM recipe_steps ORDER BY recipeId, position, id")
+    abstract suspend fun allSteps(): List<StepEntity>
+
+    @Query("SELECT * FROM recipe_categories ORDER BY recipeId, categoryId")
+    abstract suspend fun allCrossRefs(): List<RecipeCategoryCrossRef>
+
+    /** Deletes every recipe; ingredients, steps and category links cascade. */
+    @Query("DELETE FROM recipes")
+    abstract suspend fun deleteAllRecipes()
+
+    @Insert
+    abstract suspend fun restoreRecipes(items: List<RecipeEntity>)
+
+    @Insert
+    abstract suspend fun restoreIngredients(items: List<IngredientEntity>)
+
+    @Insert
+    abstract suspend fun restoreSteps(items: List<StepEntity>)
+
+    @Insert
+    abstract suspend fun restoreCrossRefs(items: List<RecipeCategoryCrossRef>)
+
     @Query("SELECT COUNT(*) FROM recipes")
     abstract fun count(): Flow<Int>
 

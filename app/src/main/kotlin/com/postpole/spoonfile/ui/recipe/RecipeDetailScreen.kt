@@ -1,6 +1,9 @@
 package com.postpole.spoonfile.ui.recipe
 
+import android.content.Intent
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.platform.LocalContext
+import com.postpole.spoonfile.exporter.RecipeTextFormatter
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Box
@@ -107,8 +110,21 @@ fun RecipeDetailScreen(
                                 contentDescription = stringResource(if (fav) R.string.detail_unfavorite else R.string.detail_favorite),
                             )
                         }
-                        // Share-as-text lands later; keep the entry in place.
-                        IconButton(onClick = { scope.launch { snackbar.showSnackbar(comingSoon) } }) {
+                        val context = LocalContext.current
+                        val labels = RecipeTextFormatter.Labels(
+                            servings = stringResource(R.string.detail_servings),
+                            ingredients = stringResource(R.string.detail_ingredients),
+                            steps = stringResource(R.string.detail_steps),
+                        )
+                        val shareTitle = stringResource(R.string.detail_share)
+                        IconButton(onClick = {
+                            val send = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_SUBJECT, details.recipe.title)
+                                putExtra(Intent.EXTRA_TEXT, RecipeTextFormatter.format(details, labels))
+                            }
+                            context.startActivity(Intent.createChooser(send, shareTitle))
+                        }) {
                             Icon(Icons.Filled.Share, contentDescription = stringResource(R.string.detail_share))
                         }
                         IconButton(onClick = { onEdit(details.recipe.id) }) {

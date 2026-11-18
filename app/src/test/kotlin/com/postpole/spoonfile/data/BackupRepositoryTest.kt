@@ -3,94 +3,199 @@ package com.postpole.spoonfile.data
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import org.json.JSONObject
 import org.junit.After
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.io.File
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 @RunWith(RobolectricTestRunner::class)
 class BackupRepositoryTest {
+    @get:Rule val tmp = TemporaryFolder()
+
     private lateinit var db: AppDatabase
+    private lateinit var imagesDir: File
+    private lateinit var images: ImageStore
     private lateinit var repo: BackupRepository
 
     @Before
     fun setUp() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).allowMainThreadQueries().build()
-        repo = BackupRepository(db)
+        imagesDir = File(tmp.root, "files/images").also { it.mkdirs() }
+        images = ImageStore(imagesDir)
+        repo = BackupRepository(db, images)
     }
 
     @After
     fun tearDown() = db.close()
 
-    private fun export(): String = ByteArrayOutputStream().also { runBlocking { repo.exportJson(it, now = 1) } }
-        .toString(Charsets.UTF_8)
+    private suspend fun addRecipe(uid: String, title: String, image: String? = null, categories: List<Long> = emptyList()) =
+        db.recipeDao().upsertWithChildren(
+            RecipeEntity(
+                uid = uid, title = title, description = "d \"quoted\"\nnewline ₹ 日本語", servings = 4.0, servingsText = "4 people",
+                prepMinutes = 5, notes = "n", sourceUrl = "https://example.com/$uid", imageFile = image, rating = 3,
+                favorite = true, origin = RecipeOrigin.WEB, createdAt = 10, updatedAt = 20,
+            ),
+            listOf(IngredientEntity(position = 0, text = "For the sauce", isHeader = true), IngredientEntity(position = 1, text = "2 tomatoes")),
+            listOf(StepEntity(position = 0, text = "Chop"), StepEntity(position = 1, text = "Cook")),
+            categories,
+        )
 
-    private suspend fun importText(text: String) = repo.importJson(ByteArrayInputStream(text.toByteArray()))
+    private fun export(): ByteArray = ByteArrayOutputStream().also { runBlocking { repo.exportZip(it, now = 1) } }.toByteArray()
+
+    private suspend fun import(bytes: ByteArray) = repo.importZip(ByteArrayInputStream(bytes))
+
+    private fun zipOf(vararg entries: Pair<String, ByteArray>): ByteArray {
+        val out = ByteArrayOutputStream()
+        ZipOutputStream(out).use { z ->
+            entries.forEach { (name, bytes) ->
+                z.putNextEntry(ZipEntry(name))
+                z.write(bytes)
+                z.closeEntry()
+            }
+        }
+        return out.toByteArray()
+    }
+
+    private fun entry(zip: ByteArray, name: String): ByteArray? =
+        java.util.zip.ZipInputStream(ByteArrayInputStream(zip)).use { z ->
+            generateSequence { z.nextEntry }.firstOrNull { it.name == name }?.let { z.readBytes() }
+        }
+
+    private data class Snapshot(
+        val recipes: List<RecipeEntity>,
+        val ingredients: List<IngredientEntity>,
+        val steps: List<StepEntity>,
+        val categories: List<CategoryEntity>,
+        val links: List<RecipeCategoryCrossRef>,
+        val shopping: List<ShoppingItemEntity>,
+    )
+
+    private suspend fun snapshot() = Snapshot(
+        db.recipeDao().allRecipes(), db.recipeDao().allIngredients(), db.recipeDao().allSteps(),
+        db.categoryDao().allCategories(), db.recipeDao().allCrossRefs(), db.shoppingDao().getAll(),
+    )
 
     @Test
-    fun roundTrip_restoresAllItemsExactly() = runBlocking {
-        val dao = db.itemDao()
-        dao.insert(Item(title = "plain", createdAt = 10))
-        dao.insert(Item(title = "unicode ₹ 日本語 \"quoted\"\nnewline", createdAt = 20))
-        val before = dao.getAll()
-        val json = export()
+    fun roundTrip_restoresAllTablesAndPhotos() = runBlocking {
+        File(imagesDir, "a.jpg").writeBytes(byteArrayOf(1, 2, 3))
+        File(imagesDir, "b.jpg").writeBytes(byteArrayOf(9, 8, 7, 6))
+        val cat = db.categoryDao().getOrCreate("Dinner")
+        val r1 = addRecipe("u1", "Soup", image = "a.jpg", categories = listOf(cat))
+        addRecipe("u2", "Salad", image = "b.jpg")
+        db.shoppingDao().insertAll(listOf(ShoppingItemEntity(text = "milk", recipeId = r1, position = 1, createdAt = 5)))
+        val before = snapshot()
+        val zip = export()
 
-        dao.deleteAll()
-        dao.insert(Item(title = "other data that must be replaced", createdAt = 99))
-        val count = importText(json)
+        assertTrue(entry(zip, "backup.json") != null)
+        assertArrayEquals(byteArrayOf(1, 2, 3), entry(zip, "images/a.jpg"))
 
-        assertEquals(2, count)
-        assertEquals(before, dao.getAll())
+        // Different data and photos on the device that must be replaced.
+        db.recipeDao().deleteAllRecipes()
+        db.categoryDao().deleteAllCategories()
+        addRecipe("other", "Other", image = "c.jpg")
+        imagesDir.deleteRecursively()
+        imagesDir.mkdirs()
+        File(imagesDir, "c.jpg").writeBytes(byteArrayOf(5))
+
+        assertEquals(2, import(zip))
+
+        assertEquals(before, snapshot())
+        assertArrayEquals(byteArrayOf(1, 2, 3), File(imagesDir, "a.jpg").readBytes())
+        assertArrayEquals(byteArrayOf(9, 8, 7, 6), File(imagesDir, "b.jpg").readBytes())
+        assertFalse(File(imagesDir, "c.jpg").exists())
+        assertEquals(listOf("images"), imagesDir.parentFile!!.list()!!.toList())
     }
 
     @Test
     fun roundTrip_emptyDatabase() = runBlocking {
-        val json = export()
-        db.itemDao().insert(Item(title = "x", createdAt = 1))
-        assertEquals(0, importText(json))
-        assertEquals(emptyList<Item>(), db.itemDao().getAll())
+        val zip = export()
+        addRecipe("x", "x")
+        assertEquals(0, import(zip))
+        assertEquals(0, db.recipeDao().countNow())
     }
 
     @Test
     fun export_isVersionedAndNamed() {
-        val json = export()
-        assertEquals(true, json.contains("\"format\": \"postpole-backup\""))
-        assertEquals(true, json.contains("\"version\": 1"))
-    }
-
-    @Test
-    fun invalidImport_leavesExistingDataUntouched() = runBlocking {
-        db.itemDao().insert(Item(title = "keep", createdAt = 1))
-        listOf(
-            "not json",
-            """{"format":"other","version":1,"items":[]}""",
-            """{"format":"postpole-backup","version":999,"items":[]}""",
-            """{"format":"postpole-backup","version":1,"items":[{"id":1,"title":"a"}]}""",
-            """{"format":"postpole-backup","version":1,"items":[{"id":1,"title":"a","createdAt":1},{"id":1,"title":"b","createdAt":2}]}""",
-        ).forEach { bad ->
-            assertThrows(InvalidBackupException::class.java) { runBlocking { importText(bad) } }
+        val json = JSONObject(String(entry(export(), "backup.json")!!))
+        assertEquals("postpole-backup", json.getString("format"))
+        assertEquals(1, json.getInt("version"))
+        listOf("recipes", "ingredients", "steps", "categories", "recipeCategories", "shoppingItems").forEach {
+            assertTrue(it, json.has(it))
         }
-        assertEquals(listOf("keep"), db.itemDao().getAll().map { it.title })
     }
 
     @Test
-    fun csv_hasHeaderEscapesAndNeutralisesFormulas() = runBlocking {
-        val dao = db.itemDao()
-        dao.insert(Item(title = "a,b", createdAt = 1))
-        dao.insert(Item(title = "say \"hi\"", createdAt = 2))
-        dao.insert(Item(title = "=SUM(A1)", createdAt = 3))
-        val out = ByteArrayOutputStream()
-        assertEquals(3, repo.exportItemsCsv(out))
-        assertEquals(
-            "id,title,createdAt\r\n1,\"a,b\",1\r\n2,\"say \"\"hi\"\"\",2\r\n3,'=SUM(A1),3\r\n",
-            out.toString(Charsets.UTF_8),
+    fun malformedImport_leavesDataAndPhotosUntouched() = runBlocking {
+        File(imagesDir, "keep.jpg").writeBytes(byteArrayOf(4, 2))
+        addRecipe("keep", "Keep", image = "keep.jpg")
+        val before = snapshot()
+        val good = JSONObject(String(entry(export(), "backup.json")!!))
+
+        fun withJson(edit: (JSONObject) -> Unit): ByteArray {
+            val copy = JSONObject(good.toString()).also(edit)
+            return zipOf("backup.json" to copy.toString().toByteArray(), "images/zzz.jpg" to byteArrayOf(1))
+        }
+        val badRecipe = JSONObject(good.getJSONArray("recipes").getJSONObject(0).toString())
+        val bad = listOf(
+            "not a zip".toByteArray(),
+            zipOf("other.txt" to byteArrayOf(1)),
+            zipOf("backup.json" to "not json".toByteArray()),
+            withJson { it.put("format", "other") },
+            withJson { it.put("version", 999) },
+            withJson { it.remove("steps") },
+            withJson { it.put("recipes", org.json.JSONArray().put(badRecipe).put(badRecipe)) },
+            withJson { it.getJSONArray("ingredients").getJSONObject(0).put("recipeId", 12345) },
+            withJson { it.getJSONArray("recipeCategories").put(JSONObject().put("recipeId", 1).put("categoryId", 77)) },
+            withJson { it.getJSONArray("recipes").getJSONObject(0).put("imageFile", "../escape.jpg") },
+            withJson { it.getJSONArray("recipes").getJSONObject(0).remove("title") },
         )
+        bad.forEach { bytes ->
+            assertThrows(InvalidBackupException::class.java) { runBlocking { import(bytes) } }
+        }
+
+        assertEquals(before, snapshot())
+        assertArrayEquals(byteArrayOf(4, 2), File(imagesDir, "keep.jpg").readBytes())
+        assertEquals(listOf("images"), imagesDir.parentFile!!.list()!!.toList())
+    }
+
+    @Test
+    fun restore_isNotCappedByTheFreeLimit() = runBlocking {
+        repeat(Limits.FREE_RECIPE_LIMIT + 5) { addRecipe("u$it", "r$it") }
+        val zip = export()
+        db.recipeDao().deleteAllRecipes()
+
+        assertEquals(Limits.FREE_RECIPE_LIMIT + 5, import(zip))
+
+        assertEquals(Limits.FREE_RECIPE_LIMIT + 5, db.recipeDao().countNow())
+        // Over the cap: new recipes stay blocked for free users until Pro.
+        val recipes = RecipeRepository(db.recipeDao(), images, Dispatchers.Unconfined)
+        assertFalse(recipes.canAdd(isPro = false))
+        assertTrue(recipes.canAdd(isPro = true))
+    }
+
+    @Test
+    fun missingPhotoInArchive_isDroppedNotFatal() = runBlocking {
+        File(imagesDir, "a.jpg").writeBytes(byteArrayOf(1))
+        addRecipe("u1", "Soup", image = "a.jpg")
+        val json = entry(export(), "backup.json")!!
+        assertEquals(1, import(zipOf("backup.json" to json)))
+        assertEquals(null, db.recipeDao().allRecipes().single().imageFile)
     }
 }

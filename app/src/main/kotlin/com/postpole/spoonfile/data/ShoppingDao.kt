@@ -10,6 +10,12 @@ interface ShoppingDao {
     @Query("SELECT * FROM shopping_items ORDER BY checked, position, id")
     fun observeAll(): Flow<List<ShoppingItemEntity>>
 
+    @Query("SELECT * FROM shopping_items ORDER BY id")
+    suspend fun getAll(): List<ShoppingItemEntity>
+
+    @Query("DELETE FROM shopping_items")
+    suspend fun deleteAll()
+
     @Insert
     suspend fun insertAll(items: List<ShoppingItemEntity>)
 

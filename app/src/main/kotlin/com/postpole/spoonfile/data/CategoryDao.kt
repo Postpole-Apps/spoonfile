@@ -17,6 +17,31 @@ abstract class CategoryDao {
     )
     abstract fun observeAllWithCounts(): Flow<List<CategoryWithCount>>
 
+    @Query("UPDATE categories SET name = :name WHERE id = :id")
+    abstract suspend fun rename(id: Long, name: String)
+
+    @Query("UPDATE categories SET sortOrder = :order WHERE id = :id")
+    protected abstract suspend fun setSortOrder(id: Long, order: Int)
+
+    /** Recipes keep existing; only the links to this category are removed (cascade). */
+    @Query("DELETE FROM categories WHERE id = :id")
+    abstract suspend fun delete(id: Long)
+
+    /** Renumbers the categories 0..n-1 in the given order. */
+    @Transaction
+    open suspend fun reorder(idsInOrder: List<Long>) {
+        idsInOrder.forEachIndexed { index, id -> setSortOrder(id, index) }
+    }
+
+    @Query("SELECT * FROM categories ORDER BY id")
+    abstract suspend fun allCategories(): List<CategoryEntity>
+
+    @Query("DELETE FROM categories")
+    abstract suspend fun deleteAllCategories()
+
+    @Insert
+    abstract suspend fun restoreCategories(items: List<CategoryEntity>)
+
     @Query("SELECT * FROM categories WHERE name = :name COLLATE NOCASE LIMIT 1")
     protected abstract suspend fun findByName(name: String): CategoryEntity?
 

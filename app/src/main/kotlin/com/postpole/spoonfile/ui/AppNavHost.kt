@@ -34,12 +34,14 @@ import com.postpole.spoonfile.ui.recipe.CookModeScreen
 import com.postpole.spoonfile.ui.recipe.RecipeDetailScreen
 import com.postpole.spoonfile.ui.recipe.RecipeEditScreen
 import com.postpole.spoonfile.ui.recipes.RecipeListScreen
+import com.postpole.spoonfile.ui.settings.CategoriesScreen
 import com.postpole.spoonfile.ui.settings.SettingsScreen
 
 object Routes {
     const val RECIPES = "recipes"
     const val SETTINGS = "settings"
     const val PRO = "pro"
+    const val CATEGORIES = "categories"
 
     /** Recipe detail; the `id` argument is the recipe's row id. */
     const val RECIPE = "recipe/{id}"
@@ -125,7 +127,11 @@ fun AppNavHost(
             SettingsScreen(
                 onBack = { navController.popBackStack() },
                 onOpenPro = { openPro() },
+                onOpenCategories = { navController.navigate(Routes.CATEGORIES) },
             )
+        }
+        composable(Routes.CATEGORIES) {
+            CategoriesScreen(onBack = { navController.popBackStack() })
         }
         composable(Routes.PRO) {
             ProScreen(onBack = { navController.popBackStack() })
