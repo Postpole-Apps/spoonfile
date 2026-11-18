@@ -137,6 +137,21 @@ class CopyRulesTest {
         }
     }
 
+    @Test
+    fun phoneTransferNoteIsExactAndNeverMentionsCloud() {
+        // strings.xml escapes the apostrophe as \'
+        val expected = "Moving to a new phone? Android\\'s phone-to-phone transfer brings your recipes and photos along. " +
+            "Keep a backup file too, just in case."
+        val pattern = Regex("""<string name="settings_phone_transfer">(.*?)</string>""")
+        val en = pattern.find(File(resDir, "values/strings.xml").readText())?.groupValues?.get(1)
+        assertEquals(expected, en)
+        for (file in stringsFiles()) {
+            val value = pattern.find(file.readText())?.groupValues?.get(1)
+            assertTrue("${file.path}: settings_phone_transfer missing", value != null)
+            assertFalse("${file.path}: settings_phone_transfer mentions cloud", value!!.contains("cloud", ignoreCase = true))
+        }
+    }
+
     // --- docs/play-listing.md ---
 
     @Test
