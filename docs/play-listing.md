@@ -1,0 +1,130 @@
+# Spoonfile — Google Play listing
+
+Draft listing copy for `com.postpole.spoonfile`. `CopyRulesTest` reads this file: keep the
+`### Title`, `### Short description` and `### Full description` headings inside each language
+section, with the text directly under them. Title limit 30 characters, short description limit 80.
+
+**Category:** Food & Drink
+
+**Contact email:** admin@postpole.com
+
+**Privacy policy URL:** TODO until the Postpole page is published.
+
+DE, FR and ES drafts below are machine-assisted translations and are marked **needs native review**.
+
+## Keywords (US)
+
+recipe organizer, recipe keeper, recipe manager, save recipes, recipe saver, recipe box, cookbook,
+my recipes, family recipes, recipe card, scan recipe, import recipes, grocery list, shopping list,
+pay once, no subscription, no ads
+
+"Family recipes" means recipes from your family. The app has no family sharing.
+
+## English (EN)
+
+### Title
+
+Spoonfile: Recipe Organizer
+
+### Short description
+
+Save recipes from any website or cookbook. Pay once. Recipes stay on your phone.
+
+### Full description
+
+Spoonfile is a recipe organizer you pay for once. Save recipes from any recipe website, scan a page from your cookbook, or type in family recipes. Your recipes stay on your phone; no account needed and no ads.
+
+• Save from any website: share a link from your browser and Spoonfile pulls out the ingredients and steps.
+• Scan cookbook pages with your camera.
+• Scale servings, cook step by step with the screen kept on, and build a shopping list.
+• 75 recipes free. Unlock unlimited recipes with a one-time purchase.
+• Bring your collection: import .paprikarecipes files. Export anytime to a backup file or to .paprikarecipes, a format other recipe apps can import.
+• Moving to a new phone? Android's phone-to-phone transfer brings your recipes along.
+
+Paprika is a trademark of its owner; this app is not affiliated with it.
+
+## Deutsch (DE) — needs native review
+
+### Title
+
+Spoonfile: Rezept-Organizer
+
+### Short description
+
+Rezepte aus Web und Kochbuch speichern. Einmal zahlen. Bleibt auf deinem Handy.
+
+### Full description
+
+Spoonfile ist ein Rezept-Organizer, den du nur einmal bezahlst. Speichere Rezepte von jeder Rezeptwebsite, scanne eine Seite aus deinem Kochbuch oder tippe Familienrezepte ein. Deine Rezepte bleiben auf deinem Handy; kein Konto nötig und keine Werbung.
+
+• Von jeder Website speichern: Teile einen Link aus deinem Browser, und Spoonfile liest Zutaten und Schritte heraus.
+• Kochbuchseiten mit der Kamera scannen.
+• Portionen umrechnen, Schritt für Schritt kochen, während der Bildschirm an bleibt, und eine Einkaufsliste anlegen.
+• 75 Rezepte kostenlos. Schalte unbegrenzt viele Rezepte mit einem einmaligen Kauf frei.
+• Bring deine Sammlung mit: Importiere .paprikarecipes-Dateien. Exportiere jederzeit in eine Sicherungsdatei oder als .paprikarecipes, ein Format, das andere Rezept-Apps importieren können.
+• Wechsel aufs neue Handy? Die Handy-zu-Handy-Übertragung von Android bringt deine Rezepte mit.
+
+Paprika ist eine Marke ihres Inhabers; diese App steht in keiner Verbindung zu ihr.
+
+## Français (FR) — needs native review
+
+### Title
+
+Spoonfile : Carnet de recettes
+
+### Short description
+
+Gardez vos recettes du web et des livres. Paiement unique. Sur votre téléphone.
+
+### Full description
+
+Spoonfile est un carnet de recettes que vous payez une seule fois. Enregistrez des recettes depuis n'importe quel site, scannez une page de votre livre de cuisine ou saisissez les recettes de famille. Vos recettes restent sur votre téléphone ; aucun compte requis et aucune publicité.
+
+• Enregistrez depuis n'importe quel site : partagez un lien depuis votre navigateur et Spoonfile en extrait les ingrédients et les étapes.
+• Scannez les pages de vos livres de cuisine avec l'appareil photo.
+• Ajustez les portions, cuisinez étape par étape avec l'écran allumé et préparez une liste de courses.
+• 75 recettes gratuites. Débloquez les recettes illimitées avec un achat unique.
+• Apportez votre collection : importez des fichiers .paprikarecipes. Exportez à tout moment vers un fichier de sauvegarde ou en .paprikarecipes, un format que d'autres applis de recettes peuvent importer.
+• Vous changez de téléphone ? Le transfert de téléphone à téléphone d'Android emporte vos recettes.
+
+Paprika est une marque de son propriétaire ; cette application n'est pas affiliée à celle-ci.
+
+## Español (ES) — needs native review
+
+### Title
+
+Spoonfile: Libro de recetas
+
+### Short description
+
+Guarda recetas de webs y libros de cocina. Pago único. Se quedan en tu teléfono.
+
+### Full description
+
+Spoonfile es un organizador de recetas que pagas una sola vez. Guarda recetas de cualquier web de recetas, escanea una página de tu libro de cocina o escribe las recetas de la familia. Tus recetas se quedan en tu teléfono; sin cuenta y sin anuncios.
+
+• Guarda desde cualquier web: comparte un enlace desde tu navegador y Spoonfile extrae los ingredientes y los pasos.
+• Escanea páginas de libros de cocina con la cámara.
+• Ajusta las raciones, cocina paso a paso con la pantalla encendida y crea una lista de la compra.
+• 75 recetas gratis. Desbloquea recetas ilimitadas con una compra única.
+• Trae tu colección: importa archivos .paprikarecipes. Exporta cuando quieras a un archivo de copia de seguridad o a .paprikarecipes, un formato que otras aplicaciones de recetas pueden importar.
+• ¿Cambias de teléfono? La transferencia de teléfono a teléfono de Android se lleva tus recetas.
+
+Paprika es una marca de su propietario; esta aplicación no está afiliada a ella.
+
+## Data safety answers
+
+**Collected**
+
+| Data type | Source | Purposes |
+| --- | --- | --- |
+| App interactions | Analytics (GA4 / Firebase Analytics) | Analytics |
+| Crash logs and diagnostics | Crashlytics; ML Kit diagnostics | App functionality / diagnostics |
+| Device or other IDs: Advertising ID and Firebase installation ID | Firebase / Google Ads | Analytics, advertising or marketing |
+
+**Not collected:** recipes, photos, notes, shopping lists, or the URLs a user imports.
+
+- Data is encrypted in transit: yes.
+- Analytics events carry only types, counts and buckets, never URLs, domains, titles or ingredient text.
+- Fetching a recipe page connects the phone directly to that website. Mention this in the privacy policy.
+- No accounts and no backend: recipes stay on the device.
