@@ -126,7 +126,7 @@ fun ScanScreen(
     val backToCapture = { scanViewModel.reset() }
     val back = {
         when {
-            previewing -> importViewModel.discard()
+            previewing -> importViewModel.closePreview()
             atCapture -> leave()
             else -> backToCapture()
         }
@@ -134,7 +134,7 @@ fun ScanScreen(
     BackHandler { back() }
 
     if (previewing) {
-        ImportPreviewScreen(emptyList(), onClose = { importViewModel.discard() }, viewModel = importViewModel)
+        ImportPreviewScreen(emptyList(), onClose = { importViewModel.closePreview() }, viewModel = importViewModel)
         return
     }
 

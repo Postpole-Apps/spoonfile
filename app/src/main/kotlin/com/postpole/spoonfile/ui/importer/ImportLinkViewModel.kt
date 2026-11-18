@@ -318,6 +318,12 @@ class ImportLinkViewModel @Inject constructor(
         _photo.value = null
     }
 
+    /** Back from a scanned preview: discards it and leaves [ImportState.Preview] so the caller shows cleanup again. */
+    fun closePreview() {
+        discard()
+        if (_state.value is ImportState.Preview) _state.value = ImportState.Input()
+    }
+
     fun save() {
         val f = _form.value
         if (f.saving) return
