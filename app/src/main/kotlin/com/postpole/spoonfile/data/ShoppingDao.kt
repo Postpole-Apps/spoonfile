@@ -24,4 +24,15 @@ interface ShoppingDao {
 
     @Query("DELETE FROM shopping_items WHERE checked = 1")
     suspend fun deleteChecked()
+
+    @Query("SELECT id, title FROM recipes")
+    fun observeRecipeTitles(): Flow<List<RecipeTitle>>
+
+    @Query("SELECT COALESCE(MAX(position), -1) + 1 FROM shopping_items")
+    suspend fun nextPosition(): Int
+
+    @Insert
+    suspend fun insert(item: ShoppingItemEntity): Long
 }
+
+data class RecipeTitle(val id: Long, val title: String)

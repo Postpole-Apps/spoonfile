@@ -28,6 +28,28 @@ object QuantityScaler {
         return lead + replacement + line.substring(match.range.last + 1)
     }
 
+    private val UNITS = setOf(
+        "cup", "cups", "tbsp", "tsp", "tablespoon", "tablespoons", "teaspoon", "teaspoons", "g", "kg", "mg",
+        "ml", "l", "dl", "cl", "oz", "lb", "lbs", "pound", "pounds", "ounce", "ounces", "pinch", "pinches",
+        "clove", "cloves", "can", "cans", "slice", "slices", "stick", "sticks", "bunch", "bunches",
+    )
+
+    /**
+     * Splits a line into its leading quantity (number plus a common unit, if any) and the rest:
+     * "2 cups flour" -> ("2 cups", "flour"). Lines without a leading number give an empty quantity.
+     */
+    fun splitQuantity(line: String): Pair<String, String> {
+        val match = LEADING.find(line) ?: return "" to line.trim()
+        var quantity = line.substring(0, match.range.last + 1).trim()
+        var rest = line.substring(match.range.last + 1).trim()
+        val unit = rest.substringBefore(' ').trimEnd('.')
+        if (rest.contains(' ') && unit.lowercase() in UNITS) {
+            quantity = "$quantity ${rest.substringBefore(' ')}"
+            rest = rest.substringAfter(' ').trim()
+        }
+        return quantity to rest
+    }
+
     internal fun parse(token: String): Double {
         val t = token.trim()
         UNICODE_VALUES[t.lastOrNull()]?.let { fraction ->

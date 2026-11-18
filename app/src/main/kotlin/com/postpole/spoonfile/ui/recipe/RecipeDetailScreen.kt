@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -67,6 +68,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.postpole.spoonfile.R
+import com.postpole.spoonfile.data.IngredientEntity
 import com.postpole.spoonfile.data.RecipeEntity
 import com.postpole.spoonfile.domain.QuantityScaler
 import com.postpole.spoonfile.ui.theme.ExtendedFabShape
@@ -89,7 +91,8 @@ fun RecipeDetailScreen(
     var showRate by rememberSaveable { mutableStateOf(false) }
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    val comingSoon = stringResource(R.string.stub_coming_soon)
+    var showShopping by rememberSaveable { mutableStateOf(false) }
+    val addedMessage = stringResource(R.string.shopping_added)
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
@@ -176,7 +179,7 @@ fun RecipeDetailScreen(
                         expanded = true,
                         colors = FloatingToolbarDefaults.standardFloatingToolbarColors(),
                         content = {
-                            IconButton(onClick = { scope.launch { snackbar.showSnackbar(comingSoon) } }) {
+                            IconButton(onClick = { showShopping = true }) {
                                 Icon(painterResource(R.drawable.ic_cart), contentDescription = stringResource(R.string.detail_add_to_shopping))
                             }
                             IconButton(onClick = { showRate = true }) {
@@ -211,6 +214,17 @@ fun RecipeDetailScreen(
                 }) { Text(stringResource(R.string.delete)) }
             },
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
+    if (showShopping && details != null) {
+        AddToShoppingDialog(
+            ingredients = details.ingredients.filter { !it.isHeader },
+            scale = state.scale,
+            onConfirm = { ids ->
+                showShopping = false
+                viewModel.addToShopping(ids) { scope.launch { snackbar.showSnackbar(addedMessage) } }
+            },
+            onDismiss = { showShopping = false },
         )
     }
     if (showRate && details != null) {
@@ -403,6 +417,43 @@ private fun ServingsStepper(servings: Double, onStep: (Int) -> Unit) {
             Text("+", style = MaterialTheme.typography.titleLarge)
         }
     }
+}
+
+/** Multi-select of ingredients; the lines shown are the scaled quantities that will be added. */
+@Composable
+private fun AddToShoppingDialog(
+    ingredients: List<IngredientEntity>,
+    scale: Double,
+    onConfirm: (Set<Long>) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var selected by rememberSaveable { mutableStateOf(ingredients.map { it.id }) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.detail_add_to_shopping)) },
+        text = {
+            LazyColumn {
+                items(ingredients, key = { it.id }) { ingredient ->
+                    val on = ingredient.id in selected
+                    Row(
+                        Modifier.fillMaxWidth().clickable {
+                            selected = if (on) selected - ingredient.id else selected + ingredient.id
+                        },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Checkbox(checked = on, onCheckedChange = null, modifier = Modifier.padding(end = 12.dp))
+                        Text(QuantityScaler.scale(ingredient.text, scale), style = MaterialTheme.typography.bodyLarge)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(enabled = selected.isNotEmpty(), onClick = { onConfirm(selected.toSet()) }) {
+                Text(stringResource(R.string.shopping_add_selected))
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
 }
 
 @Composable

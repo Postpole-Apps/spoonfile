@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.postpole.spoonfile.data.RecipeRepository
 import com.postpole.spoonfile.data.RecipeWithDetails
+import com.postpole.spoonfile.data.ShoppingRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -34,6 +35,7 @@ data class RecipeDetailUiState(
 class RecipeDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val repository: RecipeRepository,
+    private val shopping: ShoppingRepository,
 ) : ViewModel() {
     val recipeId: Long = savedStateHandle.get<Long>("id") ?: 0L
 
@@ -55,6 +57,14 @@ class RecipeDetailViewModel @Inject constructor(
     fun stepServings(delta: Int) {
         val current = state.value.servings ?: return
         servingsOverride.value = (current + delta).coerceAtLeast(1.0)
+    }
+
+    /** Adds the chosen ingredients to the shopping list, with quantities scaled to the servings shown now. */
+    fun addToShopping(ingredientIds: Set<Long>, onDone: (Int) -> Unit) {
+        val current = state.value
+        val details = current.details ?: return
+        val chosen = details.ingredients.filter { it.id in ingredientIds }
+        viewModelScope.launch { onDone(shopping.addFromRecipe(details.recipe.id, chosen, current.scale)) }
     }
 
     fun toggleFavorite() = update { it.copy(favorite = !it.favorite) }

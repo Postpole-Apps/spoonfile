@@ -35,7 +35,13 @@
     <string name="categories_title">Categories</string>
     <string name="categories_all">All recipes</string>
     <string name="nav_shopping_list">Shopping list</string>
-    <string name="shopping_stub">Your shopping list is coming together here.</string>
+    <string name="shopping_empty">Nothing on your list yet. Add ingredients from a recipe, or type an item below.</string>
+    <string name="shopping_other">Other</string>
+    <string name="shopping_clear_checked">Clear checked</string>
+    <string name="shopping_add_hint">Add an item</string>
+    <string name="shopping_add_cd">Add item</string>
+    <string name="shopping_add_selected">Add</string>
+    <string name="shopping_added">Added to your shopping list.</string>
     <string name="toolbar_grid">Grid view</string>
     <string name="toolbar_list">List view</string>
     <string name="toolbar_favorites">Favourites only</string>
