@@ -67,7 +67,12 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.postpole.spoonfile.R
+import com.postpole.spoonfile.data.IngredientEntity
 import com.postpole.spoonfile.data.RecipeEntity
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.ui.semantics.Role
 import com.postpole.spoonfile.domain.QuantityScaler
 import com.postpole.spoonfile.ui.theme.ExtendedFabShape
 import com.postpole.spoonfile.ui.theme.RecipePhotoShape
@@ -80,6 +85,7 @@ fun RecipeDetailScreen(
     onBack: () -> Unit,
     onEdit: (Long) -> Unit,
     onCook: (Long) -> Unit,
+    onOpenShopping: () -> Unit,
     viewModel: RecipeDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -89,7 +95,9 @@ fun RecipeDetailScreen(
     var showRate by rememberSaveable { mutableStateOf(false) }
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    val comingSoon = stringResource(R.string.stub_coming_soon)
+    var showAddToShopping by rememberSaveable { mutableStateOf(false) }
+    val context = LocalContext.current
+    val viewList = stringResource(R.string.shopping_view_list)
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
@@ -110,7 +118,6 @@ fun RecipeDetailScreen(
                                 contentDescription = stringResource(if (fav) R.string.detail_unfavorite else R.string.detail_favorite),
                             )
                         }
-                        val context = LocalContext.current
                         val labels = RecipeTextFormatter.Labels(
                             servings = stringResource(R.string.detail_servings),
                             ingredients = stringResource(R.string.detail_ingredients),
@@ -176,7 +183,7 @@ fun RecipeDetailScreen(
                         expanded = true,
                         colors = FloatingToolbarDefaults.standardFloatingToolbarColors(),
                         content = {
-                            IconButton(onClick = { scope.launch { snackbar.showSnackbar(comingSoon) } }) {
+                            IconButton(onClick = { showAddToShopping = true }) {
                                 Icon(painterResource(R.drawable.ic_cart), contentDescription = stringResource(R.string.detail_add_to_shopping))
                             }
                             IconButton(onClick = { showRate = true }) {
@@ -211,6 +218,27 @@ fun RecipeDetailScreen(
                 }) { Text(stringResource(R.string.delete)) }
             },
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
+    if (showAddToShopping && details != null) {
+        AddToShoppingDialog(
+            ingredients = details.ingredients.filter { !it.isHeader },
+            scale = state.scale,
+            onConfirm = { ids ->
+                showAddToShopping = false
+                viewModel.addToShopping(ids) { count ->
+                    if (count > 0) {
+                        scope.launch {
+                            val result = snackbar.showSnackbar(
+                                context.resources.getQuantityString(R.plurals.shopping_added, count, count),
+                                actionLabel = viewList,
+                            )
+                            if (result == SnackbarResult.ActionPerformed) onOpenShopping()
+                        }
+                    }
+                }
+            },
+            onDismiss = { showAddToShopping = false },
         )
     }
     if (showRate && details != null) {
@@ -403,6 +431,49 @@ private fun ServingsStepper(servings: Double, onStep: (Int) -> Unit) {
             Text("+", style = MaterialTheme.typography.titleLarge)
         }
     }
+}
+
+/** Multi-select of ingredients (all ticked at first), shown with the quantities for the current servings. */
+@Composable
+private fun AddToShoppingDialog(
+    ingredients: List<IngredientEntity>,
+    scale: Double,
+    onConfirm: (Set<Long>) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var selected by remember { mutableStateOf(ingredients.map { it.id }.toSet()) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.shopping_add_title)) },
+        text = {
+            LazyColumn {
+                items(ingredients, key = { it.id }) { ingredient ->
+                    val checked = ingredient.id in selected
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .toggleable(checked, role = Role.Checkbox) {
+                                selected = if (it) selected + ingredient.id else selected - ingredient.id
+                            },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Checkbox(checked = checked, onCheckedChange = null)
+                        Text(
+                            QuantityScaler.scale(ingredient.text, scale),
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 8.dp),
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(selected) }, enabled = selected.isNotEmpty()) {
+                Text(stringResource(R.string.shopping_add_confirm))
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
 }
 
 @Composable

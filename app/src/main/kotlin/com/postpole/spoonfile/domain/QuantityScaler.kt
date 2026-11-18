@@ -28,6 +28,12 @@ object QuantityScaler {
         return lead + replacement + line.substring(match.range.last + 1)
     }
 
+    /** Splits a line into its leading quantity (possibly empty) and the rest: "3 cups flour" -> "3" to "cups flour". */
+    fun split(line: String): Pair<String, String> {
+        val match = LEADING.find(line) ?: return "" to line.trim()
+        return line.substring(0, match.range.last + 1).trim() to line.substring(match.range.last + 1).trim()
+    }
+
     internal fun parse(token: String): Double {
         val t = token.trim()
         UNICODE_VALUES[t.lastOrNull()]?.let { fraction ->
