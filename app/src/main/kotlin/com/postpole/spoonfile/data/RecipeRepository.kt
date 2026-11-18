@@ -29,6 +29,8 @@ class RecipeRepository @Inject constructor(
 
     suspend fun getByUid(uid: String): RecipeEntity? = dao.getByUid(uid)
 
+    suspend fun dedupeKeys(): List<DedupeKey> = dao.dedupeKeys()
+
     suspend fun findBySourceUrl(url: String): RecipeEntity? = dao.findBySourceUrl(url)
 
     /** One transaction; removes the previous photo file if the recipe's photo was replaced or cleared. */
