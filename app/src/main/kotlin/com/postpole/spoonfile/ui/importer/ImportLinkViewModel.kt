@@ -64,6 +64,9 @@ sealed interface ImportState {
 
     /** The page loaded but holds no recipe data. */
     data object NoRecipe : ImportState
+
+    /** The pasted page text is on the cleanup screen (the same one the page scan uses). */
+    data object Cleanup : ImportState
 }
 
 sealed interface ImportEvent {
@@ -73,13 +76,6 @@ sealed interface ImportEvent {
     data object TypeItIn : ImportEvent
     data object SaveFailed : ImportEvent
 }
-
-/**
- * Stub for the shared line cleanup that the scan import (R5) provides: for now, trims and drops blank lines.
- * R5 replaces this with the same cleanup the OCR text uses.
- */
-internal fun cleanPastedLines(text: String): List<String> =
-    text.lines().map { it.trim() }.filter { it.isNotEmpty() }
 
 @HiltViewModel
 class ImportLinkViewModel @Inject constructor(
@@ -185,18 +181,28 @@ class ImportLinkViewModel @Inject constructor(
         _pasted.value = value
     }
 
-    /** "Open the page and copy the text": the pasted text becomes the preview's notes until R5's cleanup is wired in. */
+    /** "Open the page and copy the text": the pasted text goes to the cleanup screen. */
     fun usePastedText() {
-        val lines = cleanPastedLines(_pasted.value)
-        if (lines.isEmpty()) return
-        origin = RecipeOrigin.PASTE
-        photoBytes = null
-        _photo.value = null
+        if (_pasted.value.isBlank()) return
+        _state.value = ImportState.Cleanup
+    }
+
+    /** Back from the cleanup screen to the paste box. */
+    fun closeCleanup() {
+        if (_state.value == ImportState.Cleanup) _state.value = ImportState.NoRecipe
+    }
+
+    /** The cleaned-up text (pasted or scanned) becomes the editable preview. Nothing is saved yet. */
+    fun startFromCleanup(cleaned: RecipeEditForm, photo: ByteArray?, fromOrigin: RecipeOrigin) {
+        origin = fromOrigin
+        val preview = photo?.let { decodePreview(it) }
+        photoBytes = if (preview != null) photo else null
+        _photo.value = preview
         _selectedSuggestions.value = emptySet()
-        _form.value = RecipeEditForm(
-            notes = lines.joinToString("\n"),
-            sourceName = hostOf(currentUrl).orEmpty(),
-            sourceUrl = currentUrl.orEmpty(),
+        val fromPaste = fromOrigin == RecipeOrigin.PASTE
+        _form.value = cleaned.copy(
+            sourceName = if (fromPaste) hostOf(currentUrl).orEmpty() else "",
+            sourceUrl = if (fromPaste) currentUrl.orEmpty() else "",
             loaded = true,
         )
         _state.value = ImportState.Preview(emptyList())

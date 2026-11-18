@@ -8,6 +8,10 @@ import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.room.Room
 import com.postpole.spoonfile.analytics.Analytics
 import com.postpole.spoonfile.analytics.createAnalytics
+import com.postpole.spoonfile.importer.ocr.ContentResolverPagePhotoReader
+import com.postpole.spoonfile.importer.ocr.MlKitOcrEngine
+import com.postpole.spoonfile.importer.ocr.OcrEngine
+import com.postpole.spoonfile.importer.ocr.PagePhotoReader
 import com.postpole.spoonfile.review.ReviewPolicy
 import com.postpole.spoonfile.review.ReviewPrompter
 import com.postpole.spoonfile.billing.BillingGateway
@@ -78,6 +82,12 @@ object AppModule {
 
     @Provides
     fun provideReviewPrompter(policy: ReviewPolicy): ReviewPrompter = policy
+
+    @Provides
+    fun provideOcrEngine(engine: MlKitOcrEngine): OcrEngine = engine
+
+    @Provides
+    fun providePagePhotoReader(reader: ContentResolverPagePhotoReader): PagePhotoReader = reader
 
     @Provides
     @Singleton

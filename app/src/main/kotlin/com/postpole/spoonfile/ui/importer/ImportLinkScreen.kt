@@ -54,6 +54,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.postpole.spoonfile.R
 import com.postpole.spoonfile.data.RecipeEntity
+import com.postpole.spoonfile.data.RecipeOrigin
 import com.postpole.spoonfile.importer.web.SharedTextUrl
 import com.postpole.spoonfile.ui.recipe.RecipePhoto
 import com.postpole.spoonfile.ui.theme.RecipePhotoShape
@@ -98,6 +99,31 @@ fun ImportLinkScreen(
     }
 
     val current = state
+    if (current is ImportState.Cleanup) {
+        // The pasted text goes through the same cleanup screen the page scan uses.
+        val cleanup: ScanViewModel = hiltViewModel()
+        val pasted by viewModel.pastedText.collectAsStateWithLifecycle()
+        LaunchedEffect(cleanup) { cleanup.startFromText(pasted) }
+        LaunchedEffect(cleanup) {
+            cleanup.events.collect { event ->
+                when (event) {
+                    is ScanEvent.Continue -> viewModel.startFromCleanup(event.form, null, RecipeOrigin.PASTE)
+                }
+            }
+        }
+        val closeCleanup = {
+            cleanup.reset()
+            viewModel.closeCleanup()
+        }
+        BackHandler { closeCleanup() }
+        CleanupScreen(
+            viewModel = cleanup,
+            onBack = closeCleanup,
+            onContinue = { cleanup.continueImport(logScan = false) },
+            onAddPage = null,
+        )
+        return
+    }
     if (current is ImportState.Preview) {
         ImportPreviewScreen(current.suggestedCategories, onClose = leave, viewModel = viewModel)
         return
@@ -124,7 +150,7 @@ fun ImportLinkScreen(
                 ImportState.Checking, ImportState.Loading -> Importing(onCancel = viewModel::cancel)
                 is ImportState.LoadFailed -> LoadFailedCard(canRetry = current.canRetry, onRetry = viewModel::retry)
                 ImportState.NoRecipe -> NoRecipe(viewModel)
-                is ImportState.Preview -> Unit
+                is ImportState.Preview, ImportState.Cleanup -> Unit
             }
         }
     }
