@@ -66,6 +66,33 @@ android {
         buildConfigField("String", "PRO_PRODUCT_ID", "\"$proProductId\"")
     }
 
+    // Ad units. Debug / internal builds use ONLY Google's official demo units
+    // (https://developers.google.com/admob/android/test-ads); release uses the production units.
+    // Never click production ads.
+    fun adUnits(banner: Map<String, String>, interstitial: String, rewarded: String) = mapOf(
+        "AD_UNIT_BANNER_RECIPES" to banner.getValue("recipes"),
+        "AD_UNIT_BANNER_SHOPPING" to banner.getValue("shopping"),
+        "AD_UNIT_BANNER_CATEGORIES" to banner.getValue("categories"),
+        "AD_UNIT_INTERSTITIAL_AFTER_RECIPE" to interstitial,
+        "AD_UNIT_REWARDED" to rewarded,
+    )
+
+    val demoBanner = "ca-app-pub-3940256099942544/9214589741"
+    val debugUnits = adUnits(
+        banner = mapOf("recipes" to demoBanner, "shopping" to demoBanner, "categories" to demoBanner),
+        interstitial = "ca-app-pub-3940256099942544/1033173712",
+        rewarded = "ca-app-pub-3940256099942544/5224354917",
+    )
+    val releaseUnits = adUnits(
+        banner = mapOf(
+            "recipes" to "ca-app-pub-2007361247232604/2557681771", // sf_banner_recipes
+            "shopping" to "ca-app-pub-2007361247232604/8931518430", // sf_banner_shopping
+            "categories" to "ca-app-pub-2007361247232604/3735032070", // sf_banner_categories
+        ),
+        interstitial = "ca-app-pub-2007361247232604/1526516180", // sf_interstitial_after_recipe
+        rewarded = "", // sf_rewarded stays unused: ads_rewarded_enabled is false and there is no rewarded UI
+    )
+
     signingConfigs {
         if (signingComplete) {
             create("release") {
@@ -78,7 +105,18 @@ android {
     }
 
     buildTypes {
+        debug {
+            // UMP debug geography / test device (only honoured in debug builds).
+            val geography = providers.gradleProperty("umpDebugGeography").getOrElse("")
+            val testDevice = providers.gradleProperty("umpTestDeviceHash").getOrElse("")
+            buildConfigField("String", "UMP_DEBUG_GEOGRAPHY", "\"$geography\"")
+            buildConfigField("String", "UMP_TEST_DEVICE_HASH", "\"$testDevice\"")
+            debugUnits.forEach { (name, id) -> buildConfigField("String", name, "\"$id\"") }
+        }
         release {
+            buildConfigField("String", "UMP_DEBUG_GEOGRAPHY", "\"\"")
+            buildConfigField("String", "UMP_TEST_DEVICE_HASH", "\"\"")
+            releaseUnits.forEach { (name, id) -> buildConfigField("String", name, "\"$id\"") }
             if (signingComplete) signingConfig = signingConfigs.getByName("release")
             // Native symbols for Crashlytics / Play Console (no-op when the app has no native code).
             ndk.debugSymbolLevel = "FULL"
@@ -154,6 +192,9 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.crashlytics)
+    implementation(libs.firebase.config)
+    implementation(libs.play.services.ads)
+    implementation(libs.ump)
     implementation(libs.play.review)
     implementation(libs.play.app.update)
     implementation(libs.okhttp)

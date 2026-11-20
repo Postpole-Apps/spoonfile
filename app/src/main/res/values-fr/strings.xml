@@ -248,6 +248,9 @@
     <string name="theme_light">Clair</string>
     <string name="theme_dark">Sombre</string>
     <string name="settings_version">Version</string>
+    <string name="settings_privacy_options">Options de confidentialité</string>
+    <string name="settings_privacy_options_hint">Consulter vos choix de publicité et de confidentialité</string>
+    <string name="settings_privacy_options_not_needed">Aucune option de confidentialité n\'est nécessaire dans votre région.</string>
     <string name="settings_privacy_policy">Politique de confidentialité</string>
     <string name="settings_feedback">Envoyer un commentaire</string>
     <string name="settings_feedback_subject">Commentaires sur %1$s</string>

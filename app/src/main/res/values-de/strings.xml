@@ -243,6 +243,9 @@
     <string name="theme_light">Hell</string>
     <string name="theme_dark">Dunkel</string>
     <string name="settings_version">Version</string>
+    <string name="settings_privacy_options">Datenschutzoptionen</string>
+    <string name="settings_privacy_options_hint">Deine Werbe- und Datenschutzauswahl ansehen</string>
+    <string name="settings_privacy_options_not_needed">Für deine Region sind keine Datenschutzoptionen nötig.</string>
     <string name="settings_privacy_policy">Datenschutzerklärung</string>
     <string name="settings_feedback">Feedback senden</string>
     <string name="settings_feedback_subject">%1$s Feedback</string>

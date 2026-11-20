@@ -50,6 +50,14 @@ class BillingRepository(
         .map { it[IS_PRO] ?: false }
         .stateIn(scope, SharingStarted.Eagerly, false)
 
+    /**
+     * Same cached entitlement as [isPro], but `null` until DataStore has been read. Ads wait for a non-null
+     * value so an existing Pro buyer is never shown (or sent) an ad request while the cache loads.
+     */
+    val isProOrUnknown: StateFlow<Boolean?> = dataStore.data
+        .map<Preferences, Boolean?> { it[IS_PRO] ?: false }
+        .stateIn(scope, SharingStarted.Eagerly, null)
+
     private val _price = MutableStateFlow<String?>(null)
 
     /** Localized price from ProductDetails, null until loaded. */

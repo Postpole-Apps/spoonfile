@@ -1,9 +1,14 @@
 package com.postpole.spoonfile.ui
 
+import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import android.net.Uri
+import com.postpole.spoonfile.ads.rememberAdsController
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -63,12 +68,36 @@ fun AppNavHost(
     onSharedTextHandled: () -> Unit = {},
 ) {
     val navController = rememberNavController()
-    DisposableEffect(navController) {
+    val ads = rememberAdsController()
+    val activity = LocalActivity.current
+    val scope = rememberCoroutineScope()
+    DisposableEffect(navController, ads, activity) {
+        var previousRoute: String? = null
+        var pendingInterstitial: Job? = null
         val listener = NavController.OnDestinationChangedListener { _, destination, _ ->
-            destination.route?.let(onScreen)
+            val route = destination.route
+            route?.let(onScreen)
+            // Any navigation abandons a pending interstitial.
+            pendingInterstitial?.cancel()
+            pendingInterstitial = null
+            when {
+                // Reading a recipe: warm one interstitial (only requested if it could be shown).
+                route == Routes.RECIPE || route == Routes.COOK -> ads.preloadInterstitial()
+                // The one interstitial placement: arriving at the list after leaving detail / cook mode.
+                route == Routes.RECIPES && (previousRoute == Routes.RECIPE || previousRoute == Routes.COOK) &&
+                    activity != null -> {
+                    pendingInterstitial = scope.launch {
+                        ads.showAfterRecipe(activity, stillOnList = { navController.currentDestination?.route == Routes.RECIPES })
+                    }
+                }
+            }
+            previousRoute = route
         }
         navController.addOnDestinationChangedListener(listener)
-        onDispose { navController.removeOnDestinationChangedListener(listener) }
+        onDispose {
+            navController.removeOnDestinationChangedListener(listener)
+            pendingInterstitial?.cancel()
+        }
     }
     val openPro = { navController.navigate(Routes.PRO) }
     NavHost(navController = navController, startDestination = Routes.RECIPES) {
