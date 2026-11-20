@@ -23,6 +23,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -52,10 +53,13 @@ class SettingsViewModel @Inject constructor(
     val removeAdsUnavailable: StateFlow<Boolean> = billing.removeAdsUnavailable
     val removeAdsPending: StateFlow<Boolean> = billing.removeAdsPending
 
+    private val removeAdsRow = RemoveAdsRowGate(billing.adsRemovedOrUnknown, viewModelScope, analytics)
+
+    /** Show the Remove ads row only once entitlement has resolved and the user has neither Pro nor Remove ads. */
+    val showRemoveAdsRow: StateFlow<Boolean> = removeAdsRow.show
+
     /** The Remove ads row is on screen. The screen calls this once per visit, not per recomposition. */
-    fun onRemoveAdsPaywallViewed() {
-        analytics.logEvent(AnalyticsEvents.REMOVE_ADS_PAYWALL_VIEW)
-    }
+    fun onRemoveAdsPaywallViewed() = removeAdsRow.onViewed()
 
     fun buyRemoveAds(activity: android.app.Activity) {
         analytics.logEvent(
@@ -149,6 +153,25 @@ class SettingsViewModel @Inject constructor(
                 _events.trySend(SettingsEvent.ImportFailed)
             }
         }
+    }
+}
+
+/**
+ * Decides whether the Settings Remove ads row is shown, and logs `remove_ads_paywall_view` only when it is.
+ * [adsRemovedOrUnknown] is null until the entitlement has resolved, true for Pro / Remove ads owners.
+ */
+internal class RemoveAdsRowGate(
+    adsRemovedOrUnknown: Flow<Boolean?>,
+    scope: kotlinx.coroutines.CoroutineScope,
+    private val analytics: Analytics,
+) {
+    val show: StateFlow<Boolean> = adsRemovedOrUnknown
+        .map { it == false }
+        .stateIn(scope, SharingStarted.Eagerly, false)
+
+    fun onViewed() {
+        if (!show.value) return
+        analytics.logEvent(AnalyticsEvents.REMOVE_ADS_PAYWALL_VIEW)
     }
 }
 
