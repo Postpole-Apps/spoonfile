@@ -6,10 +6,12 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import com.postpole.spoonfile.BuildConfig
 import com.postpole.spoonfile.analytics.Analytics
 import com.postpole.spoonfile.analytics.AnalyticsEvents
 import com.postpole.spoonfile.analytics.AnalyticsParams
 import com.postpole.spoonfile.analytics.NoOpAnalytics
+import com.postpole.spoonfile.analytics.PurchaseFailResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -41,11 +43,20 @@ class BillingRepository(
     private val acknowledgeBackoffMs: Long = 500,
     private val log: (String) -> Unit = { Log.w("BillingRepository", it) },
     private val analytics: Analytics = NoOpAnalytics,
+    private val proProductId: String = BuildConfig.PRO_PRODUCT_ID,
+    private val removeAdsProductId: String = PlayBillingGateway.REMOVE_ADS_PRODUCT_ID,
 ) {
     private enum class Source { PURCHASE_FLOW, REFRESH }
 
     @Volatile
     private var loadedPro: ProductResult.Loaded? = null
+
+    @Volatile
+    private var loadedRemoveAds: ProductResult.Loaded? = null
+
+    /** Product whose purchase sheet the user opened and has not finished; fail events only apply to it. */
+    @Volatile
+    private var activeFlow: BillingProduct? = null
 
     /** Pro entitlement. Gates every Pro feature (recipe cap, whole-file import); never affected by `remove_ads`. */
     val isPro: StateFlow<Boolean> = dataStore.data
@@ -134,6 +145,7 @@ class BillingRepository(
         }
         when (val product = gateway.queryProduct(BillingProduct.REMOVE_ADS)) {
             is ProductResult.Loaded -> {
+                loadedRemoveAds = product
                 _removeAdsPrice.value = product.formattedPrice
                 _removeAdsUnavailable.value = false
             }
@@ -164,10 +176,18 @@ class BillingRepository(
     fun launchPurchase(activity: Activity, product: BillingProduct = BillingProduct.PRO): Boolean {
         val launched = gateway.launchPurchase(activity, product)
         if (launched) {
-            // Remove ads events are wired in sf-04; the existing events describe Pro only.
-            if (product == BillingProduct.PRO) analytics.logEvent(AnalyticsEvents.PURCHASE_STARTED)
+            activeFlow = product
+            when (product) {
+                BillingProduct.PRO -> analytics.logEvent(
+                    AnalyticsEvents.PURCHASE_STARTED,
+                    mapOf(AnalyticsParams.PRODUCT_ID to proProductId),
+                )
+                BillingProduct.REMOVE_ADS ->
+                    analytics.logEvent(AnalyticsEvents.REMOVE_ADS_PURCHASE_START, removeAdsParams())
+            }
         } else {
             analytics.recordNonFatal(BillingException("Could not launch purchase flow"))
+            if (product == BillingProduct.REMOVE_ADS) logRemoveAdsFail(PurchaseFailResult.LAUNCH_FAILED)
             _messages.trySend(BillingMessage.LAUNCH_FAILED)
         }
         return launched
@@ -178,8 +198,9 @@ class BillingRepository(
             is PurchaseUpdate.Purchases ->
                 applyPurchases(update.purchases, revokeIfAbsent = false, source = Source.PURCHASE_FLOW)
             PurchaseUpdate.AlreadyOwned -> refresh()
-            PurchaseUpdate.Canceled -> Unit
+            PurchaseUpdate.Canceled -> failActiveRemoveAdsFlow(PurchaseFailResult.CANCELED)
             is PurchaseUpdate.Error -> {
+                failActiveRemoveAdsFlow(PurchaseFailResult.ERROR)
                 log("Purchase failed with code ${update.code}")
                 analytics.recordNonFatal(BillingException("Purchase failed with code ${update.code}"))
                 _messages.trySend(BillingMessage.PURCHASE_ERROR)
@@ -204,11 +225,38 @@ class BillingRepository(
             dataStore.edit { it[IS_PRO] = false }
         }
         if (removeAdsPurchased.isNotEmpty()) {
+            val hadRemoveAds = dataStore.data.first()[HAS_REMOVE_ADS] ?: false
             dataStore.edit { it[HAS_REMOVE_ADS] = true }
+            // Success only for a fresh buy in the purchase flow; never for Restore / refresh.
+            if (!hadRemoveAds && source == Source.PURCHASE_FLOW) {
+                activeFlow = null
+                analytics.logEvent(AnalyticsEvents.REMOVE_ADS_PURCHASE_SUCCESS, removeAdsParams())
+            }
         } else if (revokeIfAbsent) {
             dataStore.edit { it[HAS_REMOVE_ADS] = false }
         }
         (proPurchased + removeAdsPurchased).filter { !it.acknowledged }.forEach { acknowledgeWithRetry(it.token) }
+    }
+
+    private fun failActiveRemoveAdsFlow(result: String) {
+        val flow = activeFlow ?: return
+        activeFlow = null
+        if (flow == BillingProduct.REMOVE_ADS) logRemoveAdsFail(result)
+    }
+
+    private fun logRemoveAdsFail(result: String) {
+        analytics.logEvent(AnalyticsEvents.REMOVE_ADS_PURCHASE_FAIL, removeAdsParams() + (AnalyticsParams.RESULT to result))
+    }
+
+    /** product_id always; price_micros / currency once Play has reported them (never typed in). */
+    private fun removeAdsParams(): Map<String, Any> = buildMap {
+        put(AnalyticsParams.PRODUCT_ID, removeAdsProductId)
+        loadedRemoveAds?.let {
+            if (it.priceMicros > 0 && it.currencyCode.isNotEmpty()) {
+                put(AnalyticsParams.PRICE_MICROS, it.priceMicros)
+                put(AnalyticsParams.CURRENCY, it.currencyCode)
+            }
+        }
     }
 
     /** `purchase` (with value + currency) for a fresh buy, `purchase_restored` when found on refresh/restore. */
@@ -217,6 +265,7 @@ class BillingRepository(
             Source.PURCHASE_FLOW -> {
                 val product = loadedPro
                 val params = buildMap<String, Any> {
+                    put(AnalyticsParams.PRODUCT_ID, proProductId)
                     if (product != null && product.priceMicros > 0 && product.currencyCode.isNotEmpty()) {
                         put(AnalyticsParams.VALUE, product.priceMicros / 1_000_000.0)
                         put(AnalyticsParams.CURRENCY, product.currencyCode)
@@ -224,7 +273,8 @@ class BillingRepository(
                 }
                 analytics.logEvent(AnalyticsEvents.PURCHASE, params)
             }
-            Source.REFRESH -> analytics.logEvent(AnalyticsEvents.PURCHASE_RESTORED)
+            Source.REFRESH ->
+                analytics.logEvent(AnalyticsEvents.PURCHASE_RESTORED, mapOf(AnalyticsParams.PRODUCT_ID to proProductId))
         }
     }
 

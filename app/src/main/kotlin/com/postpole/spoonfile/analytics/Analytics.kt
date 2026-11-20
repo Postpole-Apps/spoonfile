@@ -12,6 +12,23 @@ object AnalyticsEvents {
     const val BACKUP_EXPORTED = "backup_exported"
     const val BACKUP_IMPORTED = "backup_imported"
 
+    // --- Remove ads (see docs/ads-analytics.md). Params: PRODUCT_ID, PRICE_MICROS, CURRENCY only. ---
+
+    /** The Remove ads offer was shown to the user. */
+    const val REMOVE_ADS_PAYWALL_VIEW = "remove_ads_paywall_view"
+
+    /** The Play purchase sheet for `remove_ads` was launched. */
+    const val REMOVE_ADS_PURCHASE_START = "remove_ads_purchase_start"
+
+    /** A fresh `remove_ads` purchase completed. Never logged for Restore / refresh. */
+    const val REMOVE_ADS_PURCHASE_SUCCESS = "remove_ads_purchase_success"
+
+    /** Cancelled, errored or could-not-launch purchase flow. Adds [AnalyticsParams.RESULT]. */
+    const val REMOVE_ADS_PURCHASE_FAIL = "remove_ads_purchase_fail"
+
+    /** Entry point into the Remove ads offer. Param: [AnalyticsParams.SOURCE] (an [AdPaywallSource] value). */
+    const val AD_PAYWALL_ENTRY = "ad_paywall_entry"
+
     /** Params: [AnalyticsParams.IMPORT_SOURCE] and [AnalyticsParams.RESULT] only. Never a URL, domain or recipe text. */
     const val RECIPE_IMPORT = "recipe_import"
 }
@@ -25,6 +42,23 @@ object AnalyticsParams {
     const val FORMAT = "format"
     const val IMPORT_SOURCE = "import_source"
     const val RESULT = "result"
+    const val PRODUCT_ID = "product_id"
+    const val PRICE_MICROS = "price_micros"
+    const val SOURCE = "source"
+}
+
+/** Values for [AnalyticsParams.SOURCE] on `ad_paywall_entry`. Only the settings row exists today. */
+object AdPaywallSource {
+    const val SETTINGS_ROW = "settings_row"
+    const val INTERSTITIAL_CLOSE = "interstitial_close"
+    const val BANNER_OVERFLOW = "banner_overflow"
+}
+
+/** Values for [AnalyticsParams.RESULT] on `remove_ads_purchase_fail`. */
+object PurchaseFailResult {
+    const val CANCELED = "canceled"
+    const val ERROR = "error"
+    const val LAUNCH_FAILED = "launch_failed"
 }
 
 /**

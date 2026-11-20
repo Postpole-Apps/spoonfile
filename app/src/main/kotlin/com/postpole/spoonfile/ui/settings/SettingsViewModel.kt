@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.postpole.spoonfile.analytics.Analytics
+import com.postpole.spoonfile.analytics.AdPaywallSource
 import com.postpole.spoonfile.analytics.AnalyticsEvents
 import com.postpole.spoonfile.analytics.AnalyticsParams
 import com.postpole.spoonfile.billing.BillingProduct
@@ -51,7 +52,16 @@ class SettingsViewModel @Inject constructor(
     val removeAdsUnavailable: StateFlow<Boolean> = billing.removeAdsUnavailable
     val removeAdsPending: StateFlow<Boolean> = billing.removeAdsPending
 
+    /** The Remove ads row is on screen. The screen calls this once per visit, not per recomposition. */
+    fun onRemoveAdsPaywallViewed() {
+        analytics.logEvent(AnalyticsEvents.REMOVE_ADS_PAYWALL_VIEW)
+    }
+
     fun buyRemoveAds(activity: android.app.Activity) {
+        analytics.logEvent(
+            AnalyticsEvents.AD_PAYWALL_ENTRY,
+            mapOf(AnalyticsParams.SOURCE to AdPaywallSource.SETTINGS_ROW),
+        )
         billing.launchPurchase(activity, BillingProduct.REMOVE_ADS)
     }
 

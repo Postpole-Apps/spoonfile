@@ -124,6 +124,7 @@ fun SettingsScreen(
             // Pro first: it is the better deal (no ads plus unlimited recipes and whole-file import).
             ProCard(isPro = isPro, adsAlreadyRemoved = removeAdsOwned, onClick = onOpenPro)
             if (!isPro && !removeAdsOwned) {
+                LaunchedEffect(Unit) { viewModel.onRemoveAdsPaywallViewed() }
                 // The price only ever comes from Play; until it loads, no price is shown.
                 ListItem(
                     headlineContent = {
