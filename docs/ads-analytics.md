@@ -10,15 +10,15 @@ Constants live in `analytics/Analytics.kt` (`AnalyticsEvents`, `AnalyticsParams`
 
 | Event | When | Params |
 |---|---|---|
-| `remove_ads_paywall_view` | The Remove ads row in Settings is shown (once per Settings visit; not shown to Pro / Remove ads owners) | none |
+| `remove_ads_paywall_view` | The Remove ads row in Settings is shown (once per Settings visit, only after entitlement has resolved; not shown or logged for Pro / Remove ads owners) | none |
 | `ad_paywall_entry` | User taps an entry into the Remove ads offer | `source`: `settings_row` (only entry today; `interstitial_close`, `banner_overflow` are reserved) |
 | `remove_ads_purchase_start` | Play purchase sheet launched for `remove_ads` | `product_id`, `price_micros`, `currency` |
 | `remove_ads_purchase_success` | A fresh `remove_ads` purchase completes in the purchase flow. **Never on Restore / refresh**, and not on a repeated delivery | `product_id`, `price_micros`, `currency` |
-| `remove_ads_purchase_fail` | Cancel, billing error, or sheet could not launch | `product_id`, `price_micros`, `currency`, `result` (`canceled` / `error` / `launch_failed`) |
+| `remove_ads_purchase_fail` | Cancel, billing error, or sheet could not launch | `product_id`, `price_micros`, `currency`, `result` (`canceled` / `error` / `launch_failed`). Not logged after `ITEM_ALREADY_OWNED` or a PENDING result, which end the flow |
 
 `price_micros` and `currency` come from Play's product details and are omitted until Play has reported them.
 
-Existing Pro events are unchanged and still fire: `pro_screen_view`, `purchase_started`, `purchase` (with `value` / `currency`), `purchase_restored`. They now also carry `product_id` (the Pro product id). `purchase` is still a fresh buy only; `purchase_restored` covers Restore.
+Existing Pro events are unchanged and still fire: `pro_screen_view`, `purchase_started`, `purchase` (with `value` / `currency`), `purchase_restored`. `purchase_started`, `purchase` and `purchase_restored` also carry `product_id` (the Pro product id); `pro_screen_view` has no params. `purchase` is still a fresh buy only; `purchase_restored` covers Restore.
 
 ### `ad_impression` (automatic)
 

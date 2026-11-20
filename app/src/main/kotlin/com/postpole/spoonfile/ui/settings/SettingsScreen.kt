@@ -76,6 +76,7 @@ fun SettingsScreen(
 ) {
     val isPro by viewModel.isPro.collectAsStateWithLifecycle()
     val removeAdsOwned by viewModel.removeAdsOwned.collectAsStateWithLifecycle()
+    val showRemoveAdsRow by viewModel.showRemoveAdsRow.collectAsStateWithLifecycle()
     val removeAdsPrice by viewModel.removeAdsPrice.collectAsStateWithLifecycle()
     val removeAdsUnavailable by viewModel.removeAdsUnavailable.collectAsStateWithLifecycle()
     val removeAdsPending by viewModel.removeAdsPending.collectAsStateWithLifecycle()
@@ -123,7 +124,7 @@ fun SettingsScreen(
         Column(Modifier.padding(padding).verticalScroll(rememberScrollState())) {
             // Pro first: it is the better deal (no ads plus unlimited recipes and whole-file import).
             ProCard(isPro = isPro, adsAlreadyRemoved = removeAdsOwned, onClick = onOpenPro)
-            if (!isPro && !removeAdsOwned) {
+            if (showRemoveAdsRow) {
                 LaunchedEffect(Unit) { viewModel.onRemoveAdsPaywallViewed() }
                 // The price only ever comes from Play; until it loads, no price is shown.
                 ListItem(

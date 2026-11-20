@@ -197,7 +197,11 @@ class BillingRepository(
         when (update) {
             is PurchaseUpdate.Purchases ->
                 applyPurchases(update.purchases, revokeIfAbsent = false, source = Source.PURCHASE_FLOW)
-            PurchaseUpdate.AlreadyOwned -> refresh()
+            PurchaseUpdate.AlreadyOwned -> {
+                // Not a failure: the refresh restores the entitlement. Drop the flow so a later cancel is not stale.
+                activeFlow = null
+                refresh()
+            }
             PurchaseUpdate.Canceled -> failActiveRemoveAdsFlow(PurchaseFailResult.CANCELED)
             is PurchaseUpdate.Error -> {
                 failActiveRemoveAdsFlow(PurchaseFailResult.ERROR)
@@ -216,6 +220,12 @@ class BillingRepository(
         val removeAdsPurchased = removeAds.filter { it.status == PurchaseStatus.PURCHASED }
         _pending.value = proPurchased.isEmpty() && pro.any { it.status == PurchaseStatus.PENDING }
         _removeAdsPending.value = removeAdsPurchased.isEmpty() && removeAds.any { it.status == PurchaseStatus.PENDING }
+        // A PENDING result ends the sheet; a later cancel must not log a stale remove_ads_purchase_fail.
+        if (source == Source.PURCHASE_FLOW && activeFlow != null &&
+            purchases.any { it.product == activeFlow && it.status == PurchaseStatus.PENDING }
+        ) {
+            activeFlow = null
+        }
 
         if (proPurchased.isNotEmpty()) {
             val wasPro = dataStore.data.first()[IS_PRO] ?: false

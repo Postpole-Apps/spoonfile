@@ -93,6 +93,39 @@ class RemoveAdsAnalyticsTest {
         assertEquals("canceled", analytics.events[1].second["result"])
     }
 
+    @Test fun error_logsFailWithErrorResult() = runTest {
+        val repo = repo()
+        repo.start(); advanceUntilIdle()
+        repo.launchPurchase(activity, BillingProduct.REMOVE_ADS)
+        gateway.updatesFlow.emit(PurchaseUpdate.Error(code = 6))
+        advanceUntilIdle()
+        assertEquals(listOf("remove_ads_purchase_start", "remove_ads_purchase_fail"), analytics.names())
+        assertEquals("error", analytics.events[1].second["result"])
+    }
+
+    @Test fun alreadyOwned_clearsFlow_soLaterCancelLogsNoFail() = runTest {
+        val repo = repo()
+        repo.start(); advanceUntilIdle()
+        repo.launchPurchase(activity, BillingProduct.REMOVE_ADS)
+        gateway.updatesFlow.emit(PurchaseUpdate.AlreadyOwned)
+        advanceUntilIdle()
+        gateway.updatesFlow.emit(PurchaseUpdate.Canceled)
+        advanceUntilIdle()
+        assertEquals(listOf("remove_ads_purchase_start"), analytics.names())
+    }
+
+    @Test fun pending_clearsFlow_soLaterCancelLogsNoFail() = runTest {
+        val repo = repo()
+        repo.start(); advanceUntilIdle()
+        repo.launchPurchase(activity, BillingProduct.REMOVE_ADS)
+        val pending = OwnedPurchase("ra", PurchaseStatus.PENDING, acknowledged = false, product = BillingProduct.REMOVE_ADS)
+        gateway.updatesFlow.emit(PurchaseUpdate.Purchases(listOf(pending)))
+        advanceUntilIdle()
+        gateway.updatesFlow.emit(PurchaseUpdate.Canceled)
+        advanceUntilIdle()
+        assertEquals(listOf("remove_ads_purchase_start"), analytics.names())
+    }
+
     @Test fun launchFailure_logsFailWithoutStart() = runTest {
         val repo = repo()
         repo.start(); advanceUntilIdle()
