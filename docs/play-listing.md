@@ -112,19 +112,44 @@ Spoonfile es un organizador de recetas que pagas una sola vez. Guarda recetas de
 
 Paprika es una marca de su propietario; esta aplicación no está afiliada a ella.
 
+## Play Console checklist (first upload is ads-era)
+
+The first Play-bound AAB ships ads (sf-01) and the `remove_ads` product (sf-02). Do not upload a
+listing that denies ads, and do not declare ads without the matching build. Applied by Release and QA after approval.
+
+- [ ] **App content → Ads: Contains ads = Yes.**
+- [ ] **Target audience: 18 and over only.** Designed for children? **No.** Not directed to children under 13.
+- [ ] **Privacy policy:** publish `spoonfile-privacy-ads.md` at the URL above (set its "Last updated" date on publish), then link it in the listing. `privacy_policy_url` in `app_config.xml` already points to that URL, so confirm it resolves before upload.
+- [ ] **Developer website:** https://pocket-ledger-postpole.web.app (app-ads.txt is already live there; do not change it).
+- [ ] **Contact email:** admin@postpole.com.
+- [ ] **Advertising ID declaration: Yes.** Purposes: Advertising or marketing, Analytics, Fraud prevention, security and compliance, and Personalization (personalised ads can be served after consent). `AD_ID` stays declared in the manifest.
+- [ ] **Data safety:** answer as below, then walk it against the ads-containing AAB before the first upload.
+- [ ] Confirm the short and full descriptions and any feature graphic claim the app is free of ads.
+
 ## Data safety answers
 
-**Collected**
+Full AdMob disclosure (not "Advertising ID only"), per
+https://developers.google.com/admob/android/privacy/play-data-disclosure.
+
+**Collected and shared**
 
 | Data type | Source | Purposes |
 | --- | --- | --- |
-| App interactions | Analytics (GA4 / Firebase Analytics) | Analytics |
-| Crash logs and diagnostics | Crashlytics; ML Kit diagnostics | App functionality / diagnostics |
-| Device or other IDs: Advertising ID and Firebase installation ID | Firebase / Google Ads | Analytics, advertising or marketing |
+| Device or other IDs (Advertising ID, Firebase installation ID) | Google Mobile Ads SDK, Firebase | Advertising or marketing, Analytics, Fraud prevention, security, and compliance |
+| Approximate location (derived from IP) | Google Mobile Ads SDK | Advertising or marketing, Analytics, Fraud prevention, security, and compliance |
+| App interactions | Google Mobile Ads SDK, GA4 / Firebase Analytics | Advertising or marketing, Analytics, Fraud prevention, security, and compliance |
+| Diagnostics | Google Mobile Ads SDK, ML Kit | Advertising or marketing, Analytics, Fraud prevention, security, and compliance |
+
+**Collected, not shared**
+
+| Data type | Source | Purposes |
+| --- | --- | --- |
+| Crash logs | Crashlytics | App functionality / diagnostics |
+| Purchase history | Google Play Billing | App functionality |
 
 **Not collected:** recipes, photos, notes, shopping lists, or the URLs a user imports.
 
 - Data is encrypted in transit: yes.
 - Analytics events carry only types, counts and buckets, never URLs, domains, titles or ingredient text.
 - Fetching a recipe page connects the phone directly to that website. Mention this in the privacy policy.
-- No accounts and no backend: your data is stored on your device.
+- No accounts and no backend: your recipes stay on your device.
