@@ -217,6 +217,9 @@
     <string name="pro_error_purchase">L\'achat n\'a pas abouti. Veuillez réessayer.</string>
     <string name="pro_error_launch">Impossible d\'ouvrir Google Play. Veuillez réessayer.</string>
     <string name="pro_restore">Restaurer les achats</string>
+    <string name="pro_restore_done">Achats restaurés</string>
+    <string name="pro_restore_nothing">Rien à restaurer</string>
+    <string name="pro_restore_failed">Impossible de restaurer les achats. Veuillez réessayer.</string>
     <string name="pro_pending">Votre achat est en attente. Pro sera débloqué une fois le paiement terminé.</string>
     <string name="pro_active">Pro actif</string>
     <string name="pro_locked">Cette fonction fait partie de Pro.</string>
@@ -258,7 +261,6 @@
     <string name="settings_version">Version</string>
     <string name="settings_privacy_options">Options de confidentialité</string>
     <string name="settings_privacy_options_hint">Consulter vos choix de publicité et de confidentialité</string>
-    <string name="settings_privacy_options_not_needed">Aucune option de confidentialité n\'est nécessaire dans votre région.</string>
     <string name="settings_privacy_policy">Politique de confidentialité</string>
     <string name="settings_feedback">Envoyer un commentaire</string>
     <string name="settings_feedback_subject">Commentaires sur %1$s</string>

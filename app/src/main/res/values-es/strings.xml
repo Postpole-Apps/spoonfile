@@ -217,6 +217,9 @@
     <string name="pro_error_purchase">La compra no se completó. Inténtalo de nuevo.</string>
     <string name="pro_error_launch">No se pudo abrir Google Play. Inténtalo de nuevo.</string>
     <string name="pro_restore">Restaurar compras</string>
+    <string name="pro_restore_done">Compras restauradas</string>
+    <string name="pro_restore_nothing">Nada que restaurar</string>
+    <string name="pro_restore_failed">No se pudieron restaurar las compras. Inténtalo de nuevo.</string>
     <string name="pro_pending">Tu compra está pendiente. Pro se desbloqueará cuando se complete el pago.</string>
     <string name="pro_active">Pro activo</string>
     <string name="pro_locked">Esta función forma parte de Pro.</string>
@@ -258,7 +261,6 @@
     <string name="settings_version">Versión</string>
     <string name="settings_privacy_options">Opciones de privacidad</string>
     <string name="settings_privacy_options_hint">Revisa tus opciones de anuncios y privacidad</string>
-    <string name="settings_privacy_options_not_needed">No se necesitan opciones de privacidad en tu región.</string>
     <string name="settings_privacy_policy">Política de privacidad</string>
     <string name="settings_feedback">Enviar comentarios</string>
     <string name="settings_feedback_subject">Comentarios sobre %1$s</string>

@@ -19,6 +19,10 @@ interface AdConsent {
     val canRequestAds: StateFlow<Boolean>
 }
 
+/** The Settings "Privacy options" row is shown only when UMP reports REQUIRED (UNKNOWN and NOT_REQUIRED hide it). */
+internal fun isPrivacyOptionsRequired(status: ConsentInformation.PrivacyOptionsRequirementStatus): Boolean =
+    status == ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
+
 /**
  * User Messaging Platform wrapper. [gather] runs on every launch: it refreshes the consent state and shows the
  * form when the user's region requires one. [canRequestAds] only turns true from UMP's own answer
@@ -72,8 +76,7 @@ class ConsentManager @Inject constructor() : AdConsent {
 
     private fun publish(info: ConsentInformation) {
         _canRequestAds.value = info.canRequestAds()
-        _privacyOptionsRequired.value =
-            info.privacyOptionsRequirementStatus == ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
+        _privacyOptionsRequired.value = isPrivacyOptionsRequired(info.privacyOptionsRequirementStatus)
     }
 
     private fun requestParameters(context: Context): ConsentRequestParameters {

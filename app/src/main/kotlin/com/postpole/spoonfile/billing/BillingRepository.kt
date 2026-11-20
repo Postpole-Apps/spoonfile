@@ -166,7 +166,10 @@ class BillingRepository(
     }
 
     /** User-initiated restore. */
-    suspend fun restore(): Boolean = refresh()
+    suspend fun restore(): RestoreResult {
+        val refreshed = refresh()
+        return RestoreResult.from(refreshed, isPro.value, removeAdsOwned.value)
+    }
 
     /** Call when the app comes to the foreground to pick up pending completions and refunds. */
     fun onForeground() {

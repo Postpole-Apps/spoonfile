@@ -38,6 +38,20 @@ class BillingException(message: String) : Exception(message)
 /** One-shot, user-visible billing problems. */
 enum class BillingMessage { PURCHASE_ERROR, LAUNCH_FAILED }
 
+/** Outcome of a user-initiated "Restore purchases", shown to the user as a snackbar. */
+enum class RestoreResult {
+    RESTORED, NOTHING_TO_RESTORE, FAILED;
+
+    companion object {
+        /** [refreshed] is false when the billing query failed; otherwise Pro or Remove ads found means restored. */
+        fun from(refreshed: Boolean, proOwned: Boolean, removeAdsOwned: Boolean): RestoreResult = when {
+            !refreshed -> FAILED
+            proOwned || removeAdsOwned -> RESTORED
+            else -> NOTHING_TO_RESTORE
+        }
+    }
+}
+
 /** Result of the purchase flow as reported by Play. */
 sealed interface PurchaseUpdate {
     data class Purchases(val purchases: List<OwnedPurchase>) : PurchaseUpdate
