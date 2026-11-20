@@ -7,16 +7,14 @@ data class AdInputs(
     val canRequestAds: Boolean,
     /** `MobileAds.initialize` has completed (it only runs after [canRequestAds]). */
     val sdkReady: Boolean,
-    /** Cached Pro entitlement; `null` while it is still loading, which counts as "no ads yet". */
-    val isPro: Boolean?,
-    /** The `remove_ads` product (sf-02). Always false until that issue lands. */
-    val removeAds: Boolean,
+    /** Pro **or** `remove_ads` is owned; `null` while the cache is still loading, which counts as "no ads yet". */
+    val adsRemoved: Boolean?,
 )
 
 /** Pure ad gating. Entitlement, kill switch, UMP and the per-format flag must all agree. */
 object AdEligibility {
     private fun base(i: AdInputs) =
-        i.config.adsEnabled && i.canRequestAds && i.sdkReady && i.isPro == false && !i.removeAds
+        i.config.adsEnabled && i.canRequestAds && i.sdkReady && i.adsRemoved == false
 
     fun banners(i: AdInputs) = base(i) && i.config.bannerEnabled
 
