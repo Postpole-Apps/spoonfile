@@ -32,7 +32,7 @@ internal object CopyRules {
 
     /** Ads are planned, so the copy must not promise an ad-free app (en / de / fr / es). */
     private val noAdsClaims = Regex(
-        "no ads|ad-free|ad free|without ads|ohne werbung|keine werbung|werbefrei|" +
+        "no ads|ad-free|ad free|without ads|free of ads|ohne werbung|keine werbung|werbefrei|" +
             "aucune publicité|sans publicité|sin anuncios|sin publicidad",
         RegexOption.IGNORE_CASE,
     )
@@ -205,7 +205,7 @@ class CopyRulesTest {
 
     @Test
     fun noAdsClaimsAreCaughtInEveryLanguage() {
-        listOf("No ads", "An AD-FREE app", "Without ads", "Keine Werbung", "Ohne Werbung", "werbefrei",
+        listOf("No ads", "An AD-FREE app", "Without ads", "Free of ads", "Keine Werbung", "Ohne Werbung", "werbefrei",
             "aucune publicité", "Sans publicité", "sin anuncios", "Sin publicidad")
             .forEach { assertTrue(it, CopyRules.noAdsClaims(it).isNotEmpty()) }
         assertTrue(CopyRules.noAdsClaims("Your data is stored on your device").isEmpty())

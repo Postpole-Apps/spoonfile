@@ -124,7 +124,7 @@ listing that denies ads, and do not declare ads without the matching build. Appl
 - [ ] **Contact email:** admin@postpole.com.
 - [ ] **Advertising ID declaration: Yes.** Purposes: Advertising or marketing, Analytics, Fraud prevention, security and compliance, and Personalization (personalised ads can be served after consent). `AD_ID` stays declared in the manifest.
 - [ ] **Data safety:** answer as below, then walk it against the ads-containing AAB before the first upload.
-- [ ] Confirm the short and full descriptions and any feature graphic claim the app is free of ads.
+- [ ] Confirm the short and full descriptions and any feature graphic do not contradict **Contains ads = Yes** (no wording that promises an ad-less app).
 
 ## Data safety answers
 
