@@ -248,6 +248,9 @@
     <string name="theme_light">Claro</string>
     <string name="theme_dark">Oscuro</string>
     <string name="settings_version">Versión</string>
+    <string name="settings_privacy_options">Opciones de privacidad</string>
+    <string name="settings_privacy_options_hint">Revisa tus opciones de anuncios y privacidad</string>
+    <string name="settings_privacy_options_not_needed">No se necesitan opciones de privacidad en tu región.</string>
     <string name="settings_privacy_policy">Política de privacidad</string>
     <string name="settings_feedback">Enviar comentarios</string>
     <string name="settings_feedback_subject">Comentarios sobre %1$s</string>

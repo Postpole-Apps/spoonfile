@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
@@ -58,6 +59,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -72,7 +74,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.postpole.spoonfile.BuildConfig
 import com.postpole.spoonfile.R
+import com.postpole.spoonfile.ads.AdBanner
 import com.postpole.spoonfile.data.CategoryWithCount
 import com.postpole.spoonfile.data.Limits
 import com.postpole.spoonfile.data.RecipeEntity
@@ -122,7 +126,19 @@ fun RecipeListScreen(
         }
     }
 
+    // True only while the banner actually occupies the bottom slot (false after no-fill / ads off / Pro).
+    var showBanner by remember { mutableStateOf(false) }
+
     Scaffold(
+        // Reserved slot under the list: the banner never overlays rows, the toolbar or the FAB, and sits
+        // above the navigation bar.
+        bottomBar = {
+            AdBanner(
+                BuildConfig.AD_UNIT_BANNER_RECIPES,
+                contentModifier = Modifier.navigationBarsPadding(),
+                onOccupiedChange = { showBanner = it },
+            )
+        },
         topBar = {
             TopAppBar(
                 title = {
@@ -153,7 +169,14 @@ fun RecipeListScreen(
             )
         },
     ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding)) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .padding(padding)
+                // With a banner the bar below already owns the navigation-bar inset, so the toolbar and FAB
+                // (which pad for it themselves) must not add it a second time.
+                .then(if (showBanner) Modifier.consumeWindowInsets(WindowInsets.navigationBars) else Modifier),
+        ) {
             if (state.isEmptyLibrary) {
                 EmptyState(
                     onPasteLink = { viewModel.onAddAction(AddAction.PASTE_LINK) },

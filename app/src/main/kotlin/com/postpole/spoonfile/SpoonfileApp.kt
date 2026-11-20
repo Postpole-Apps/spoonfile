@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
+import com.postpole.spoonfile.ads.AdsController
 import com.postpole.spoonfile.analytics.Analytics
 import com.postpole.spoonfile.analytics.AnalyticsEvents
 import com.postpole.spoonfile.billing.BillingRepository
@@ -23,14 +24,20 @@ class SpoonfileApp : Application() {
     @Inject lateinit var billing: BillingRepository
     @Inject lateinit var analytics: Analytics
     @Inject lateinit var dataStore: DataStore<Preferences>
+    @Inject lateinit var ads: AdsController
 
     override fun onCreate() {
         super.onCreate()
         billing.start()
+        // Waits for UMP (gathered by MainActivity) before it initialises the Mobile Ads SDK.
+        ads.start()
         logLaunch()
         ProcessLifecycleOwner.get().lifecycle.addObserver(
             object : DefaultLifecycleObserver {
-                override fun onStart(owner: LifecycleOwner) = billing.onForeground()
+                override fun onStart(owner: LifecycleOwner) {
+                    billing.onForeground()
+                    ads.onForeground()
+                }
             },
         )
     }

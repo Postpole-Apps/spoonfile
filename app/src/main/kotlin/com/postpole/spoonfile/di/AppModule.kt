@@ -6,6 +6,8 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.room.Room
+import com.postpole.spoonfile.ads.AdsConfigSource
+import com.postpole.spoonfile.ads.createAdsConfig
 import com.postpole.spoonfile.analytics.Analytics
 import com.postpole.spoonfile.analytics.createAnalytics
 import com.postpole.spoonfile.importer.ocr.ContentResolverPagePhotoReader
@@ -77,6 +79,10 @@ object AppModule {
     @Provides
     @Singleton
     fun provideAnalytics(@ApplicationContext context: Context): Analytics = createAnalytics(context)
+
+    @Provides
+    @Singleton
+    fun provideAdsConfig(@ApplicationContext context: Context): AdsConfigSource = createAdsConfig(context)
 
     @Provides
     fun provideReviewPrompter(policy: ReviewPolicy): ReviewPrompter = policy

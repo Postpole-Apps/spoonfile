@@ -48,7 +48,12 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
+import androidx.compose.ui.platform.LocalDensity
+import com.postpole.spoonfile.BuildConfig
 import com.postpole.spoonfile.R
+import com.postpole.spoonfile.ads.AdBanner
 import com.postpole.spoonfile.data.ShoppingItemEntity
 import com.postpole.spoonfile.domain.QuantityScaler
 
@@ -92,7 +97,16 @@ fun ShoppingListScreen(
                 },
             )
         },
-        bottomBar = { AddItemBar(onAdd = viewModel::addItem) },
+        bottomBar = {
+            Column {
+                // Banner above the add-item field, hidden while the keyboard is open so it never rides up
+                // over what the user is typing. The add bar below owns the navigation-bar inset.
+                if (WindowInsets.ime.getBottom(LocalDensity.current) == 0) {
+                    AdBanner(BuildConfig.AD_UNIT_BANNER_SHOPPING)
+                }
+                AddItemBar(onAdd = viewModel::addItem)
+            }
+        },
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
             when {

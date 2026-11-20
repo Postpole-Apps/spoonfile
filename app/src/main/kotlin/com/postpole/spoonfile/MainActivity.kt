@@ -16,6 +16,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.postpole.spoonfile.ads.AdsController
 import com.postpole.spoonfile.analytics.Analytics
 import com.postpole.spoonfile.data.ThemeMode
 import com.postpole.spoonfile.importer.web.SharedTextUrl
@@ -31,6 +32,7 @@ class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
 
     @Inject lateinit var analytics: Analytics
+    @Inject lateinit var ads: AdsController
 
     private lateinit var update: InAppUpdate
 
@@ -40,6 +42,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        // UMP on every launch; ads are only requested once it allows them.
+        ads.gatherConsent(this)
         update = InAppUpdate(this, onError = analytics::recordNonFatal)
         if (savedInstanceState == null) {
             update.check()

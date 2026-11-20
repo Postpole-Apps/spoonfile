@@ -56,7 +56,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.postpole.spoonfile.BuildConfig
+import androidx.activity.compose.LocalActivity
+import androidx.compose.runtime.rememberCoroutineScope
 import com.postpole.spoonfile.R
+import com.postpole.spoonfile.ads.rememberAdsController
+import kotlinx.coroutines.launch
 import com.postpole.spoonfile.data.ThemeMode
 import com.postpole.spoonfile.exporter.PaprikaArchiveWriter
 import java.text.DateFormat
@@ -77,6 +81,11 @@ fun SettingsScreen(
     val context = LocalContext.current
     val resolver = context.contentResolver
     val snackbarHostState = remember { SnackbarHostState() }
+    // No ads are ever shown on this screen; it only reopens the UMP privacy options form.
+    val ads = rememberAdsController()
+    val activity = LocalActivity.current
+    val scope = rememberCoroutineScope()
+    val privacyOptionsNotNeeded = stringResource(R.string.settings_privacy_options_not_needed)
 
     var showTheme by rememberSaveable { mutableStateOf(false) }
     var pendingRestore by rememberSaveable { mutableStateOf<String?>(null) }
@@ -186,6 +195,17 @@ fun SettingsScreen(
                             )
                         },
                     )
+                },
+            )
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_privacy_options)) },
+                supportingContent = { Text(stringResource(R.string.settings_privacy_options_hint)) },
+                modifier = Modifier.heightIn(min = 64.dp).clickable {
+                    if (activity != null && ads.privacyOptionsRequired.value) {
+                        ads.showPrivacyOptions(activity)
+                    } else {
+                        scope.launch { snackbarHostState.showSnackbar(privacyOptionsNotNeeded) }
+                    }
                 },
             )
             ListItem(

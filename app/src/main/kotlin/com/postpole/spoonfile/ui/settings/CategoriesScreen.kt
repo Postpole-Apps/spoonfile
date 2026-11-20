@@ -33,7 +33,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.foundation.layout.navigationBarsPadding
+import com.postpole.spoonfile.BuildConfig
 import com.postpole.spoonfile.R
+import com.postpole.spoonfile.ads.AdBanner
 
 /** `nameId` below: null = dialog closed, 0 = new category, otherwise renaming that id. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,6 +52,9 @@ fun CategoriesScreen(
     var deleteId by rememberSaveable { mutableStateOf<Long?>(null) }
 
     Scaffold(
+        bottomBar = {
+            AdBanner(BuildConfig.AD_UNIT_BANNER_CATEGORIES, contentModifier = Modifier.navigationBarsPadding())
+        },
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.categories_manage_title)) },
