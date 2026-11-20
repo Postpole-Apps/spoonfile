@@ -46,9 +46,9 @@ private class NoopGateway : BillingGateway {
     override val updates: Flow<PurchaseUpdate> = emptyFlow()
     override val disconnects: Flow<Unit> = emptyFlow()
     override suspend fun connect() = true
-    override suspend fun queryProduct(): ProductResult = ProductResult.Unavailable
+    override suspend fun queryProduct(product: com.postpole.spoonfile.billing.BillingProduct): ProductResult = ProductResult.Unavailable
     override suspend fun queryPurchases(): List<OwnedPurchase>? = emptyList()
-    override fun launchPurchase(activity: Activity) = true
+    override fun launchPurchase(activity: Activity, product: com.postpole.spoonfile.billing.BillingProduct) = true
     override suspend fun acknowledge(token: String) = true
 }
 

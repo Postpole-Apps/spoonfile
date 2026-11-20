@@ -25,8 +25,17 @@ import kotlinx.coroutines.flow.asSharedFlow
 
 class PlayBillingGateway(
     context: Context,
-    private val productId: String = BuildConfig.PRO_PRODUCT_ID,
+    proProductId: String = BuildConfig.PRO_PRODUCT_ID,
+    removeAdsProductId: String = REMOVE_ADS_PRODUCT_ID,
 ) : BillingGateway {
+
+    private val productIds = mapOf(
+        BillingProduct.PRO to proProductId,
+        BillingProduct.REMOVE_ADS to removeAdsProductId,
+    )
+
+    private fun Purchase.product(): BillingProduct? =
+        productIds.entries.firstOrNull { it.value in products }?.key
 
     private val _updates = MutableSharedFlow<PurchaseUpdate>(extraBufferCapacity = 16)
     override val updates: Flow<PurchaseUpdate> = _updates.asSharedFlow()
@@ -36,8 +45,7 @@ class PlayBillingGateway(
 
     private class LaunchableProduct(val details: ProductDetails, val offerToken: String)
 
-    @Volatile
-    private var launchable: LaunchableProduct? = null
+    private val launchable = java.util.concurrent.ConcurrentHashMap<BillingProduct, LaunchableProduct>()
 
     private val client: BillingClient = BillingClient.newBuilder(context.applicationContext)
         .setListener(
@@ -46,9 +54,7 @@ class PlayBillingGateway(
                     when (result.responseCode) {
                         BillingClient.BillingResponseCode.OK ->
                             PurchaseUpdate.Purchases(
-                                purchases.orEmpty()
-                                    .filter { productId in it.products }
-                                    .map { it.toOwned() },
+                                purchases.orEmpty().mapNotNull { p -> p.product()?.let { p.toOwned(it) } },
                             )
                         BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED -> PurchaseUpdate.AlreadyOwned
                         BillingClient.BillingResponseCode.USER_CANCELED -> PurchaseUpdate.Canceled
@@ -79,7 +85,8 @@ class PlayBillingGateway(
         return done.await()
     }
 
-    override suspend fun queryProduct(): ProductResult {
+    override suspend fun queryProduct(product: BillingProduct): ProductResult {
+        val productId = productIds.getValue(product)
         val params = QueryProductDetailsParams.newBuilder()
             .setProductList(
                 listOf(
@@ -111,10 +118,10 @@ class PlayBillingGateway(
         val legacyToken = details?.oneTimePurchaseOfferDetails?.offerToken
         val chosen = offers.firstOrNull { it.second == legacyToken } ?: offers.firstOrNull()
         if (details == null || chosen == null) {
-            launchable = null
+            launchable.remove(product)
             return ProductResult.Unavailable
         }
-        launchable = LaunchableProduct(details, chosen.second)
+        launchable[product] = LaunchableProduct(details, chosen.second)
         return ProductResult.Loaded(
             formattedPrice = chosen.first.formattedPrice,
             priceMicros = chosen.first.priceAmountMicros,
@@ -127,19 +134,17 @@ class PlayBillingGateway(
             QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.INAPP).build(),
         )
         if (result.billingResult.responseCode != BillingClient.BillingResponseCode.OK) return null
-        return result.purchasesList
-            .filter { productId in it.products }
-            .map { it.toOwned() }
+        return result.purchasesList.mapNotNull { p -> p.product()?.let { p.toOwned(it) } }
     }
 
-    override fun launchPurchase(activity: Activity): Boolean {
-        val product = launchable ?: return false
+    override fun launchPurchase(activity: Activity, product: BillingProduct): Boolean {
+        val target = launchable[product] ?: return false
         val params = BillingFlowParams.newBuilder()
             .setProductDetailsParamsList(
                 listOf(
                     BillingFlowParams.ProductDetailsParams.newBuilder()
-                        .setProductDetails(product.details)
-                        .setOfferToken(product.offerToken)
+                        .setProductDetails(target.details)
+                        .setOfferToken(target.offerToken)
                         .build(),
                 ),
             )
@@ -155,11 +160,14 @@ class PlayBillingGateway(
         return result.responseCode == BillingClient.BillingResponseCode.OK
     }
 
-    private companion object {
-        const val TAG = "PlayBillingGateway"
+    companion object {
+        /** Play product id of the one-time Remove ads product (purchase option `remove-ads` in Console). */
+        const val REMOVE_ADS_PRODUCT_ID = "remove_ads"
+        private const val TAG = "PlayBillingGateway"
     }
 
-    private fun Purchase.toOwned() = OwnedPurchase(
+    private fun Purchase.toOwned(product: BillingProduct) = OwnedPurchase(
+        product = product,
         token = purchaseToken,
         status = when (purchaseState) {
             Purchase.PurchaseState.PURCHASED -> PurchaseStatus.PURCHASED

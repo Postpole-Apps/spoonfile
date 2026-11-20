@@ -39,8 +39,18 @@ internal object CopyRules {
 
     fun noAdsClaims(text: String): List<String> = noAdsClaims.findAll(text).map { it.value }.toList()
 
+    /** In-app paywall strings for the Remove ads / Pro products; the only place "no ads" copy is allowed. */
+    val PAYWALL_AD_STRINGS = listOf(
+        "pro_feature_no_ads",
+        "pro_feature_no_ads_hint",
+        "settings_pro_card_hint_with_no_ads",
+    )
+
+    fun withoutPaywallAdCopy(xml: String): String =
+        xml.lines().filterNot { line -> PAYWALL_AD_STRINGS.any { line.contains("name=\"$it\"") } }.joinToString("\n")
+
     /** Hard-coded prices: the price may only ever come from Play (`BillingRepository.price`). */
-    private val priceLike = Regex("""\$\d|€\d|£\d|9\.99""")
+    private val priceLike = Regex("""\$\d|€\d|£\d|[39]\.99""")
 
     fun bannedPhrases(text: String): List<String> = banned.filter { text.contains(it, ignoreCase = true) }
 
@@ -177,8 +187,20 @@ class CopyRulesTest {
     fun listingAndStringsMakeNoNoAdsClaims() {
         assertEquals(emptyList<String>(), CopyRules.noAdsClaims(listing))
         for (file in stringsFiles()) {
-            assertEquals(file.path, emptyList<String>(), CopyRules.noAdsClaims(file.readText()))
+            assertEquals(file.path, emptyList<String>(), CopyRules.noAdsClaims(CopyRules.withoutPaywallAdCopy(file.readText())))
         }
+    }
+
+    @Test
+    fun onlyThePaywallStringsMayMentionNoAds() {
+        // The ads-shipping build sells ad removal, so exactly these strings (and no others) say "no ads".
+        for (file in stringsFiles()) {
+            val allowed = file.readLines().filter { line ->
+                CopyRules.PAYWALL_AD_STRINGS.any { line.contains("name=\"$it\"") }
+            }
+            assertEquals(file.path, CopyRules.PAYWALL_AD_STRINGS.size, allowed.size)
+        }
+        assertEquals(emptyList<String>(), CopyRules.noAdsClaims(listing))
     }
 
     @Test
@@ -272,7 +294,7 @@ class CopyRulesTest {
 
     @Test
     fun hardCodedPricesAreCaught() {
-        listOf("Only $4.99", "nur 4€5", "£3", "for 9.99").forEach { assertTrue(it, CopyRules.hasPrice(it)) }
+        listOf("Only $4.99", "nur 4€5", "£3", "for 9.99", "just 3.99").forEach { assertTrue(it, CopyRules.hasPrice(it)) }
         assertFalse(CopyRules.hasPrice("Unlock Pro — %1\$s"))
     }
 }

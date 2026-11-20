@@ -16,6 +16,7 @@ class ProViewModel @Inject constructor(
     private val billing: BillingRepository,
 ) : ViewModel() {
     val isPro: StateFlow<Boolean> = billing.isPro
+    val removeAdsOwned: StateFlow<Boolean> = billing.removeAdsOwned
     val price: StateFlow<String?> = billing.price
     val pending: StateFlow<Boolean> = billing.pending
     val productUnavailable: StateFlow<Boolean> = billing.productUnavailable

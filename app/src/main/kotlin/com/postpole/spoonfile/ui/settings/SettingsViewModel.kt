@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.postpole.spoonfile.analytics.Analytics
 import com.postpole.spoonfile.analytics.AnalyticsEvents
 import com.postpole.spoonfile.analytics.AnalyticsParams
+import com.postpole.spoonfile.billing.BillingProduct
 import com.postpole.spoonfile.billing.BillingRepository
 import com.postpole.spoonfile.data.BackupRepository
 import com.postpole.spoonfile.data.InvalidBackupException
@@ -45,6 +46,19 @@ class SettingsViewModel @Inject constructor(
     private val analytics: Analytics,
 ) : ViewModel() {
     val isPro: StateFlow<Boolean> = billing.isPro
+    val removeAdsOwned: StateFlow<Boolean> = billing.removeAdsOwned
+    val removeAdsPrice: StateFlow<String?> = billing.removeAdsPrice
+    val removeAdsUnavailable: StateFlow<Boolean> = billing.removeAdsUnavailable
+    val removeAdsPending: StateFlow<Boolean> = billing.removeAdsPending
+
+    fun buyRemoveAds(activity: android.app.Activity) {
+        billing.launchPurchase(activity, BillingProduct.REMOVE_ADS)
+    }
+
+    /** Retry after "unavailable" (e.g. the product was not reachable yet). */
+    fun retryProducts() {
+        viewModelScope.launch { billing.refresh() }
+    }
 
     val themeMode: StateFlow<ThemeMode> = settings.themeMode
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ThemeMode.SYSTEM)

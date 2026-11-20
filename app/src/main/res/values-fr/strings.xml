@@ -223,6 +223,14 @@
     <string name="upgrade_to_pro">Passer à Pro</string>
     <string name="pro_unlocked">Pro débloqué</string>
     <string name="settings_pro_card_hint">Recettes illimitées et import de fichiers entiers. Un seul paiement.</string>
+    <string name="settings_pro_card_hint_with_no_ads">Recettes illimitées, import de fichiers entiers et aucune publicité. Un seul paiement.</string>
+    <string name="pro_feature_no_ads">Aucune publicité</string>
+    <string name="pro_feature_no_ads_hint">Spoonfile reste sans publicité</string>
+    <string name="settings_remove_ads">Supprimer les publicités — %1$s</string>
+    <string name="settings_remove_ads_no_price">Supprimer les publicités</string>
+    <string name="settings_remove_ads_hint">Masque uniquement les publicités. Pro lève aussi la limite de recettes et ajoute l\'import de fichiers entiers.</string>
+    <string name="settings_remove_ads_pending">Votre achat est en attente. Les publicités disparaîtront une fois le paiement terminé.</string>
+    <string name="settings_remove_ads_unavailable">Indisponible pour le moment. Touchez pour réessayer.</string>
     <string name="settings_section_recipes">Recettes</string>
     <string name="settings_categories">Catégories</string>
     <string name="settings_categories_hint">Créer, renommer, réorganiser et supprimer</string>

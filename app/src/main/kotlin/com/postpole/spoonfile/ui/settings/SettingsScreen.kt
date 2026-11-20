@@ -75,6 +75,10 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val isPro by viewModel.isPro.collectAsStateWithLifecycle()
+    val removeAdsOwned by viewModel.removeAdsOwned.collectAsStateWithLifecycle()
+    val removeAdsPrice by viewModel.removeAdsPrice.collectAsStateWithLifecycle()
+    val removeAdsUnavailable by viewModel.removeAdsUnavailable.collectAsStateWithLifecycle()
+    val removeAdsPending by viewModel.removeAdsPending.collectAsStateWithLifecycle()
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
     val lastBackupAt by viewModel.lastBackupAt.collectAsStateWithLifecycle()
     val remind by viewModel.remindBackup.collectAsStateWithLifecycle()
@@ -117,7 +121,37 @@ fun SettingsScreen(
         },
     ) { padding ->
         Column(Modifier.padding(padding).verticalScroll(rememberScrollState())) {
-            ProCard(isPro = isPro, onClick = onOpenPro)
+            // Pro first: it is the better deal (no ads plus unlimited recipes and whole-file import).
+            ProCard(isPro = isPro, adsAlreadyRemoved = removeAdsOwned, onClick = onOpenPro)
+            if (!isPro && !removeAdsOwned) {
+                // The price only ever comes from Play; until it loads, no price is shown.
+                ListItem(
+                    headlineContent = {
+                        Text(
+                            removeAdsPrice?.let { stringResource(R.string.settings_remove_ads, it) }
+                                ?: stringResource(R.string.settings_remove_ads_no_price),
+                        )
+                    },
+                    supportingContent = {
+                        Text(
+                            stringResource(
+                                when {
+                                    removeAdsPending -> R.string.settings_remove_ads_pending
+                                    removeAdsPrice == null && removeAdsUnavailable -> R.string.settings_remove_ads_unavailable
+                                    else -> R.string.settings_remove_ads_hint
+                                },
+                            ),
+                        )
+                    },
+                    modifier = Modifier.heightIn(min = 64.dp).clickable(enabled = !removeAdsPending) {
+                        when {
+                            removeAdsPrice != null -> activity?.let(viewModel::buyRemoveAds)
+                            else -> viewModel.retryProducts()
+                        }
+                    },
+                )
+                HorizontalDivider()
+            }
 
             SectionHeader(R.string.settings_section_recipes)
             ListItem(
@@ -254,7 +288,7 @@ fun SettingsScreen(
 
 /** Top of Settings: opens the Pro route; reads "Pro unlocked" once purchased. */
 @Composable
-private fun ProCard(isPro: Boolean, onClick: () -> Unit) {
+private fun ProCard(isPro: Boolean, adsAlreadyRemoved: Boolean, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         shape = MaterialTheme.shapes.extraLarge,
@@ -268,7 +302,9 @@ private fun ProCard(isPro: Boolean, onClick: () -> Unit) {
                 style = MaterialTheme.typography.titleLarge,
             )
             if (!isPro) {
-                Text(stringResource(R.string.settings_pro_card_hint), style = MaterialTheme.typography.bodyMedium)
+                // Remove ads owners are sold on features only; ad removal is not pitched again.
+                val hint = if (adsAlreadyRemoved) R.string.settings_pro_card_hint else R.string.settings_pro_card_hint_with_no_ads
+                Text(stringResource(hint), style = MaterialTheme.typography.bodyMedium)
             }
         }
     }

@@ -55,13 +55,11 @@ class AdsController @Inject constructor(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val sdkReady = MutableStateFlow(false)
 
-    // sf-02 hooks the `remove_ads` product in here; Pro already hides every ad.
-    private val removeAds = MutableStateFlow(false)
-
+    // Pro or `remove_ads` hides every ad.
     private val inputs: StateFlow<AdInputs> = combine(
-        configSource.config, consent.canRequestAds, sdkReady, billing.isProOrUnknown, removeAds,
-    ) { config, canRequest, ready, pro, remove -> AdInputs(config, canRequest, ready, pro, remove) }
-        .stateIn(scope, SharingStarted.Eagerly, AdInputs(configSource.config.value, false, false, null, false))
+        configSource.config, consent.canRequestAds, sdkReady, billing.adsRemovedOrUnknown,
+    ) { config, canRequest, ready, removed -> AdInputs(config, canRequest, ready, removed) }
+        .stateIn(scope, SharingStarted.Eagerly, AdInputs(configSource.config.value, false, false, null))
 
     /** Banners show only while this is true. It flips false at once on Pro, kill switch or lost consent. */
     val bannersAllowed: StateFlow<Boolean> = MutableStateFlow(false).also { out ->

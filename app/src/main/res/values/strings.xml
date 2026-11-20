@@ -217,6 +217,14 @@
     <string name="upgrade_to_pro">Upgrade to Pro</string>
     <string name="pro_unlocked">Pro unlocked</string>
     <string name="settings_pro_card_hint">Unlimited recipes and whole-file import. Pay once.</string>
+    <string name="settings_pro_card_hint_with_no_ads">Unlimited recipes, whole-file import and no ads. Pay once.</string>
+    <string name="pro_feature_no_ads">No ads</string>
+    <string name="pro_feature_no_ads_hint">Spoonfile stays free of ads</string>
+    <string name="settings_remove_ads">Remove ads — %1$s</string>
+    <string name="settings_remove_ads_no_price">Remove ads</string>
+    <string name="settings_remove_ads_hint">Hides ads only. Pro also lifts the recipe limit and adds whole-file import.</string>
+    <string name="settings_remove_ads_pending">Your purchase is pending. Ads go away once the payment completes.</string>
+    <string name="settings_remove_ads_unavailable">Not available right now. Tap to try again.</string>
     <string name="settings_section_recipes">Recipes</string>
     <string name="settings_categories">Categories</string>
     <string name="settings_categories_hint">Create, rename, reorder and delete</string>

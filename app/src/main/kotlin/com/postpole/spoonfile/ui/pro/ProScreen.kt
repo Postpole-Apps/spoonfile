@@ -47,6 +47,7 @@ import com.postpole.spoonfile.billing.BillingMessage
 @Composable
 fun ProScreen(onBack: () -> Unit, viewModel: ProViewModel = hiltViewModel()) {
     val isPro by viewModel.isPro.collectAsStateWithLifecycle()
+    val removeAdsOwned by viewModel.removeAdsOwned.collectAsStateWithLifecycle()
     val price by viewModel.price.collectAsStateWithLifecycle()
     val pending by viewModel.pending.collectAsStateWithLifecycle()
     val unavailable by viewModel.productUnavailable.collectAsStateWithLifecycle()
@@ -145,6 +146,10 @@ fun ProScreen(onBack: () -> Unit, viewModel: ProViewModel = hiltViewModel()) {
             // Only features that ship in this release.
             FeatureCard(stringResource(R.string.pro_feature_unlimited), stringResource(R.string.pro_feature_unlimited_hint))
             FeatureCard(stringResource(R.string.pro_feature_import), stringResource(R.string.pro_feature_import_hint))
+            // This build ships ads, so Pro truthfully includes "No ads". Not re-sold to Remove ads owners.
+            if (!removeAdsOwned) {
+                FeatureCard(stringResource(R.string.pro_feature_no_ads), stringResource(R.string.pro_feature_no_ads_hint))
+            }
             OutlinedCard(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(stringResource(R.string.pro_always_free_title), style = MaterialTheme.typography.titleMedium)

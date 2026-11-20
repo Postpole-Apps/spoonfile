@@ -44,12 +44,22 @@ private class FakeGateway : BillingGateway {
         return true
     }
 
-    override suspend fun queryProduct() = product
+    var removeAdsProduct: ProductResult = ProductResult.Loaded("RA-PRICE")
+    val queriedProducts = mutableListOf<BillingProduct>()
+    val launchedProducts = mutableListOf<BillingProduct>()
+
+    override suspend fun queryProduct(product: BillingProduct): ProductResult {
+        queriedProducts += product
+        return if (product == BillingProduct.PRO) this.product else removeAdsProduct
+    }
     override suspend fun queryPurchases(): List<OwnedPurchase>? {
         queryPurchasesCalls++
         return owned
     }
-    override fun launchPurchase(activity: Activity) = launchResult
+    override fun launchPurchase(activity: Activity, product: BillingProduct): Boolean {
+        launchedProducts += product
+        return launchResult
+    }
     var launchResult = true
     override suspend fun acknowledge(token: String): Boolean {
         acknowledged += token
@@ -314,6 +324,139 @@ class BillingRepositoryTest {
         gateway.updatesFlow.emit(PurchaseUpdate.Error(6))
         advanceUntilIdle()
         assertTrue(analytics.nonFatals.single() is BillingException)
+    }
+
+    private val removeAdsBought =
+        OwnedPurchase("ra", PurchaseStatus.PURCHASED, acknowledged = true, product = BillingProduct.REMOVE_ADS)
+
+    @Test fun refresh_queriesBothProducts() = runTest {
+        val repo = repo()
+        repo.start()
+        advanceUntilIdle()
+        assertTrue(gateway.queriedProducts.containsAll(listOf(BillingProduct.PRO, BillingProduct.REMOVE_ADS)))
+        assertEquals("RA-PRICE", repo.removeAdsPrice.value)
+        assertEquals("$4.99", repo.price.value)
+    }
+
+    @Test fun removeAdsOnly_hidesAdsButIsNotPro() = runTest {
+        val repo = repo()
+        gateway.owned = listOf(removeAdsBought)
+        repo.start()
+        advanceUntilIdle()
+        assertTrue(repo.removeAdsOwned.value)
+        assertTrue(repo.adsRemoved.value)
+        assertEquals(true, repo.adsRemovedOrUnknown.value)
+        assertFalse(repo.isPro.value)
+    }
+
+    @Test fun proOnly_hidesAdsWithoutOwningRemoveAds() = runTest {
+        val repo = repo()
+        gateway.owned = listOf(purchased.copy(acknowledged = true))
+        repo.start()
+        advanceUntilIdle()
+        assertTrue(repo.isPro.value)
+        assertTrue(repo.adsRemoved.value)
+        assertFalse(repo.removeAdsOwned.value)
+    }
+
+    @Test fun neverOwned_adsRemovedIsFalse_andUnknownBeforeLoad() = runTest {
+        val repo = repo()
+        assertEquals(null, repo.adsRemovedOrUnknown.value)
+        repo.start()
+        advanceUntilIdle()
+        assertFalse(repo.adsRemoved.value)
+        assertEquals(false, repo.adsRemovedOrUnknown.value)
+    }
+
+    @Test fun restore_unlocksBoth() = runTest {
+        val repo = repo()
+        repo.start()
+        advanceUntilIdle()
+        gateway.owned = listOf(purchased.copy(acknowledged = true), removeAdsBought)
+        repo.restore()
+        advanceUntilIdle()
+        assertTrue(repo.isPro.value)
+        assertTrue(repo.removeAdsOwned.value)
+    }
+
+    @Test fun refundOfRemoveAds_keepsPro() = runTest {
+        val repo = repo()
+        gateway.owned = listOf(purchased.copy(acknowledged = true), removeAdsBought)
+        repo.start()
+        advanceUntilIdle()
+        gateway.owned = listOf(purchased.copy(acknowledged = true))
+        repo.refresh()
+        advanceUntilIdle()
+        assertTrue(repo.isPro.value)
+        assertFalse(repo.removeAdsOwned.value)
+        assertTrue(repo.adsRemoved.value)
+    }
+
+    @Test fun refundOfPro_keepsRemoveAds_andCapReturns() = runTest {
+        val repo = repo()
+        gateway.owned = listOf(purchased.copy(acknowledged = true), removeAdsBought)
+        repo.start()
+        advanceUntilIdle()
+        gateway.owned = listOf(removeAdsBought)
+        repo.refresh()
+        advanceUntilIdle()
+        assertFalse(repo.isPro.value)
+        assertTrue(repo.removeAdsOwned.value)
+        assertTrue(repo.adsRemoved.value)
+    }
+
+    @Test fun refundOfBoth_showsAdsAgain() = runTest {
+        val repo = repo()
+        gateway.owned = listOf(purchased.copy(acknowledged = true), removeAdsBought)
+        repo.start()
+        advanceUntilIdle()
+        gateway.owned = emptyList()
+        repo.refresh()
+        advanceUntilIdle()
+        assertFalse(repo.adsRemoved.value)
+    }
+
+    @Test fun removeAdsPurchaseFlow_acknowledgesAndDoesNotTouchPro() = runTest {
+        val repo = repo()
+        repo.start()
+        advanceUntilIdle()
+        gateway.updatesFlow.emit(
+            PurchaseUpdate.Purchases(listOf(removeAdsBought.copy(acknowledged = false))),
+        )
+        advanceUntilIdle()
+        assertTrue(repo.removeAdsOwned.value)
+        assertFalse(repo.isPro.value)
+        assertEquals(listOf("ra"), gateway.acknowledged)
+    }
+
+    @Test fun removeAdsPending_doesNotHideAds() = runTest {
+        val repo = repo()
+        gateway.owned = listOf(removeAdsBought.copy(status = PurchaseStatus.PENDING, acknowledged = false))
+        repo.start()
+        advanceUntilIdle()
+        assertTrue(repo.removeAdsPending.value)
+        assertFalse(repo.pending.value)
+        assertFalse(repo.adsRemoved.value)
+    }
+
+    @Test fun removeAdsMissingSku_isUnavailableWithoutPriceAndProStillLoads() = runTest {
+        val repo = repo()
+        gateway.removeAdsProduct = ProductResult.Unavailable
+        repo.start()
+        advanceUntilIdle()
+        assertTrue(repo.removeAdsUnavailable.value)
+        assertEquals(null, repo.removeAdsPrice.value)
+        assertFalse(repo.productUnavailable.value)
+        assertEquals("$4.99", repo.price.value)
+    }
+
+    @Test fun removeAdsRestore_logsNoPurchaseEvent() = runTest {
+        val analytics = RecordingAnalytics()
+        val repo = repoWith(analytics)
+        gateway.owned = listOf(removeAdsBought)
+        repo.start()
+        advanceUntilIdle()
+        assertTrue(analytics.events.none { it.first == "purchase" })
     }
 
     @Test fun connect_givesUpAfterMaxAttempts() = runTest {

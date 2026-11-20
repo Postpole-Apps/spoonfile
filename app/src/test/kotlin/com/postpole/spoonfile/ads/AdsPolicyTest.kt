@@ -83,9 +83,8 @@ class AdsPolicyTest {
         config: AdsConfig = AdsConfig.DEFAULTS,
         canRequestAds: Boolean = true,
         sdkReady: Boolean = true,
-        isPro: Boolean? = false,
-        removeAds: Boolean = false,
-    ) = AdInputs(config, canRequestAds, sdkReady, isPro, removeAds)
+        adsRemoved: Boolean? = false,
+    ) = AdInputs(config, canRequestAds, sdkReady, adsRemoved)
 
     @Test fun adsShowWhenEverythingAllows() {
         assertTrue(AdEligibility.banners(inputs()))
@@ -110,10 +109,9 @@ class AdsPolicyTest {
     }
 
     @Test fun proAndRemoveAdsBuyersSeeNoAds_andUnknownCountsAsNo() {
-        assertFalse(AdEligibility.banners(inputs(isPro = true)))
-        assertFalse(AdEligibility.interstitials(inputs(isPro = true)))
-        assertFalse(AdEligibility.banners(inputs(removeAds = true)))
-        assertFalse(AdEligibility.banners(inputs(isPro = null)))
+        assertFalse(AdEligibility.banners(inputs(adsRemoved = true)))
+        assertFalse(AdEligibility.interstitials(inputs(adsRemoved = true)))
+        assertFalse(AdEligibility.banners(inputs(adsRemoved = null)))
     }
 
     @Test fun appOpenRewardedAndNativeNeverEnableAnything() {
