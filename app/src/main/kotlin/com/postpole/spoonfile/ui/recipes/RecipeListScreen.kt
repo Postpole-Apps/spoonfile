@@ -59,6 +59,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -76,7 +77,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.postpole.spoonfile.BuildConfig
 import com.postpole.spoonfile.R
 import com.postpole.spoonfile.ads.AdBanner
-import com.postpole.spoonfile.ads.rememberBannersAllowed
 import com.postpole.spoonfile.data.CategoryWithCount
 import com.postpole.spoonfile.data.Limits
 import com.postpole.spoonfile.data.RecipeEntity
@@ -126,13 +126,18 @@ fun RecipeListScreen(
         }
     }
 
-    val showBanner = rememberBannersAllowed()
+    // True only while the banner actually occupies the bottom slot (false after no-fill / ads off / Pro).
+    var showBanner by remember { mutableStateOf(false) }
 
     Scaffold(
         // Reserved slot under the list: the banner never overlays rows, the toolbar or the FAB, and sits
         // above the navigation bar.
         bottomBar = {
-            AdBanner(BuildConfig.AD_UNIT_BANNER_RECIPES, contentModifier = Modifier.navigationBarsPadding())
+            AdBanner(
+                BuildConfig.AD_UNIT_BANNER_RECIPES,
+                contentModifier = Modifier.navigationBarsPadding(),
+                onOccupiedChange = { showBanner = it },
+            )
         },
         topBar = {
             TopAppBar(

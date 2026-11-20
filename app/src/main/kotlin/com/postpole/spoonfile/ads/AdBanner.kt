@@ -10,6 +10,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
@@ -55,13 +56,26 @@ fun rememberBannersAllowed(viewModel: AdsViewModel = hiltViewModel()): Boolean {
  * backgrounding or leaving the screen.
  */
 @Composable
-fun AdBanner(unitId: String, modifier: Modifier = Modifier, contentModifier: Modifier = Modifier) {
-    if (!rememberBannersAllowed()) return
+fun AdBanner(
+    unitId: String,
+    modifier: Modifier = Modifier,
+    contentModifier: Modifier = Modifier,
+    onOccupiedChange: (Boolean) -> Unit = {},
+) {
+    val allowed = rememberBannersAllowed()
+    var failed by remember(unitId) { mutableStateOf(false) }
+    val occupied = allowed && !failed
+    // Tell the host whether the slot really has height, so it can keep the navigation-bar inset itself once the
+    // slot collapses (no fill, ads off, Pro). Reset to false when this leaves composition.
+    val latestCallback by rememberUpdatedState(onOccupiedChange)
+    DisposableEffect(occupied) {
+        latestCallback(occupied)
+        onDispose { latestCallback(false) }
+    }
+    if (!occupied) return
     val context = LocalContext.current
     val widthDp = LocalConfiguration.current.screenWidthDp
     val adSize = remember(widthDp) { AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(context, widthDp) }
-    var failed by remember(unitId) { mutableStateOf(false) }
-    if (failed) return
 
     val adView = remember(unitId, adSize) {
         AdView(context).apply {
