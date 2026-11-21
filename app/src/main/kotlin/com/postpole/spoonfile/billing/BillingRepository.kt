@@ -63,6 +63,11 @@ class BillingRepository(
         .map { it[IS_PRO] ?: false }
         .stateIn(scope, SharingStarted.Eagerly, false)
 
+    /** Same as [isPro], but `null` until DataStore has been read, so a Pro user is never treated as free while it loads. */
+    val isProOrUnknown: StateFlow<Boolean?> = dataStore.data
+        .map<Preferences, Boolean?> { it[IS_PRO] ?: false }
+        .stateIn(scope, SharingStarted.Eagerly, null)
+
     /** `remove_ads` is owned. Hides ads only; it does not unlock any Pro feature. */
     val removeAdsOwned: StateFlow<Boolean> = dataStore.data
         .map { it[HAS_REMOVE_ADS] ?: false }

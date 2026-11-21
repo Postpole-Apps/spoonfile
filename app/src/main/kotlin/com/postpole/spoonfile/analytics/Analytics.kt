@@ -31,6 +31,17 @@ object AnalyticsEvents {
 
     /** Params: [AnalyticsParams.IMPORT_SOURCE] and [AnalyticsParams.RESULT] only. Never a URL, domain or recipe text. */
     const val RECIPE_IMPORT = "recipe_import"
+
+    // --- Meal plan (Pro). Params: ITEM_COUNT only. Never recipe ids / titles, ingredient text or dates. ---
+
+    /** A Pro user opened the meal plan. [AnalyticsParams.ITEM_COUNT] = entries in the visible week. */
+    const val MEAL_PLAN_VIEW = "meal_plan_view"
+
+    /** A recipe was added to the plan. */
+    const val MEAL_PLAN_ADD = "meal_plan_add"
+
+    /** Plan ingredients were added to the shopping list. [AnalyticsParams.ITEM_COUNT] = lines added. */
+    const val MEAL_PLAN_SHOP = "meal_plan_shop"
 }
 
 object AnalyticsParams {

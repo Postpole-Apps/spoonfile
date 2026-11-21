@@ -85,11 +85,13 @@ class BackupRepositoryTest {
         val categories: List<CategoryEntity>,
         val links: List<RecipeCategoryCrossRef>,
         val shopping: List<ShoppingItemEntity>,
+        val plan: List<MealPlanEntryEntity>,
     )
 
     private suspend fun snapshot() = Snapshot(
         db.recipeDao().allRecipes(), db.recipeDao().allIngredients(), db.recipeDao().allSteps(),
         db.categoryDao().allCategories(), db.recipeDao().allCrossRefs(), db.shoppingDao().getAll(),
+        db.mealPlanDao().getAll(),
     )
 
     @Test
@@ -100,6 +102,12 @@ class BackupRepositoryTest {
         val r1 = addRecipe("u1", "Soup", image = "a.jpg", categories = listOf(cat))
         addRecipe("u2", "Salad", image = "b.jpg")
         db.shoppingDao().insertAll(listOf(ShoppingItemEntity(text = "milk", recipeId = r1, position = 1, createdAt = 5)))
+        db.mealPlanDao().insertAll(
+            listOf(
+                MealPlanEntryEntity(date = "2026-11-23", recipeId = r1, position = 0, createdAt = 7),
+                MealPlanEntryEntity(date = "2026-11-23", recipeId = r1, position = 1, createdAt = 8),
+            ),
+        )
         val before = snapshot()
         val zip = export()
 
@@ -135,8 +143,8 @@ class BackupRepositoryTest {
     fun export_isVersionedAndNamed() {
         val json = JSONObject(String(entry(export(), "backup.json")!!))
         assertEquals("postpole-backup", json.getString("format"))
-        assertEquals(1, json.getInt("version"))
-        listOf("recipes", "ingredients", "steps", "categories", "recipeCategories", "shoppingItems").forEach {
+        assertEquals(2, json.getInt("version"))
+        listOf("recipes", "ingredients", "steps", "categories", "recipeCategories", "shoppingItems", "mealPlanEntries").forEach {
             assertTrue(it, json.has(it))
         }
     }
@@ -144,7 +152,8 @@ class BackupRepositoryTest {
     @Test
     fun malformedImport_leavesDataAndPhotosUntouched() = runBlocking {
         File(imagesDir, "keep.jpg").writeBytes(byteArrayOf(4, 2))
-        addRecipe("keep", "Keep", image = "keep.jpg")
+        val keep = addRecipe("keep", "Keep", image = "keep.jpg")
+        db.mealPlanDao().insertAll(listOf(MealPlanEntryEntity(date = "2026-11-24", recipeId = keep, createdAt = 1)))
         val before = snapshot()
         val good = JSONObject(String(entry(export(), "backup.json")!!))
 
@@ -165,6 +174,9 @@ class BackupRepositoryTest {
             withJson { it.getJSONArray("recipeCategories").put(JSONObject().put("recipeId", 1).put("categoryId", 77)) },
             withJson { it.getJSONArray("recipes").getJSONObject(0).put("imageFile", "../escape.jpg") },
             withJson { it.getJSONArray("recipes").getJSONObject(0).remove("title") },
+            withJson { it.getJSONArray("mealPlanEntries").getJSONObject(0).put("recipeId", 12345) },
+            withJson { it.getJSONArray("mealPlanEntries").getJSONObject(0).put("date", "tomorrow") },
+            withJson { it.getJSONArray("mealPlanEntries").put(it.getJSONArray("mealPlanEntries").getJSONObject(0)) },
         )
         bad.forEach { bytes ->
             assertThrows(InvalidBackupException::class.java) { runBlocking { import(bytes) } }
@@ -173,6 +185,18 @@ class BackupRepositoryTest {
         assertEquals(before, snapshot())
         assertArrayEquals(byteArrayOf(4, 2), File(imagesDir, "keep.jpg").readBytes())
         assertEquals(listOf("images"), imagesDir.parentFile!!.list()!!.toList())
+    }
+
+    @Test
+    fun v1Backup_withoutMealPlanEntries_restoresWithAnEmptyPlan() = runBlocking {
+        val r = addRecipe("u1", "Soup")
+        val v1 = JSONObject(String(entry(export(), "backup.json")!!)).put("version", 1).also { it.remove("mealPlanEntries") }
+        db.mealPlanDao().insertAll(listOf(MealPlanEntryEntity(date = "2026-11-24", recipeId = r, createdAt = 1)))
+
+        assertEquals(1, import(zipOf("backup.json" to v1.toString().toByteArray())))
+
+        assertEquals(listOf("Soup"), db.recipeDao().allRecipes().map { it.title })
+        assertEquals(emptyList<MealPlanEntryEntity>(), db.mealPlanDao().getAll())
     }
 
     @Test

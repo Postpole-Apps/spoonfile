@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
@@ -97,6 +98,7 @@ fun RecipeListScreen(
     onScanPage: () -> Unit,
     onImportFile: () -> Unit,
     onOpenShopping: () -> Unit,
+    onOpenMealPlan: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenPro: () -> Unit,
     viewModel: RecipeListViewModel = hiltViewModel(),
@@ -160,6 +162,9 @@ fun RecipeListScreen(
                 actions = {
                     IconButton(onClick = onOpenShopping) {
                         Icon(painterResource(R.drawable.ic_cart), contentDescription = stringResource(R.string.nav_shopping_list))
+                    }
+                    IconButton(onClick = onOpenMealPlan) {
+                        Icon(Icons.Filled.DateRange, contentDescription = stringResource(R.string.nav_meal_plan))
                     }
                     TextButton(onClick = onOpenPro) { Text(stringResource(R.string.nav_pro)) }
                     IconButton(onClick = onOpenSettings) {

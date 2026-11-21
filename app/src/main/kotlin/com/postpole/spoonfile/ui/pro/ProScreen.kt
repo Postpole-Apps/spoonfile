@@ -151,6 +151,7 @@ fun ProScreen(onBack: () -> Unit, viewModel: ProViewModel = hiltViewModel()) {
             // Only features that ship in this release.
             FeatureCard(stringResource(R.string.pro_feature_unlimited), stringResource(R.string.pro_feature_unlimited_hint))
             FeatureCard(stringResource(R.string.pro_feature_import), stringResource(R.string.pro_feature_import_hint))
+            FeatureCard(stringResource(R.string.pro_feature_meal_plan), stringResource(R.string.pro_feature_meal_plan_hint))
             // This build ships ads, so Pro truthfully includes "No ads". Not re-sold to Remove ads owners.
             if (!removeAdsOwned) {
                 FeatureCard(stringResource(R.string.pro_feature_no_ads), stringResource(R.string.pro_feature_no_ads_hint))
