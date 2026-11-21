@@ -57,8 +57,8 @@ android {
         applicationId = "com.postpole.spoonfile"
         minSdk = 26
         targetSdk = 36
-        versionCode = 3
-        versionName = "1.0.2"
+        versionCode = 4
+        versionName = "1.0.3"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // One-time in-app product id for the Pro unlock. Override with -PproProductId=... if needed.
