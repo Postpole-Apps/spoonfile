@@ -18,6 +18,7 @@ import androidx.navigation.navArgument
 import com.postpole.spoonfile.ui.importer.ImportLinkScreen
 import com.postpole.spoonfile.ui.importer.PaprikaImportScreen
 import com.postpole.spoonfile.ui.importer.ScanScreen
+import com.postpole.spoonfile.ui.mealplan.MealPlanScreen
 import com.postpole.spoonfile.ui.pro.ProScreen
 import com.postpole.spoonfile.ui.recipe.CookModeScreen
 import com.postpole.spoonfile.ui.recipe.RecipeDetailScreen
@@ -42,6 +43,7 @@ object Routes {
 
     // Stub destinations, filled in by later issues.
     const val SHOPPING = "shopping"
+    const val MEAL_PLAN = "meal-plan"
     /** Import from a web link; the optional `url` argument (a shared link) starts the import straight away. */
     const val IMPORT_LINK = "import/link?url={url}"
     const val SCAN = "import/scan"
@@ -109,8 +111,20 @@ fun AppNavHost(
                 onScanPage = { navController.navigate(Routes.SCAN) },
                 onImportFile = { navController.navigate(Routes.IMPORT_FILE) },
                 onOpenShopping = { navController.navigate(Routes.SHOPPING) },
+                onOpenMealPlan = { navController.navigate(Routes.MEAL_PLAN) },
                 onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                 onOpenPro = { openPro() },
+            )
+        }
+        composable(Routes.MEAL_PLAN) {
+            MealPlanScreen(
+                onBack = { navController.popBackStack() },
+                onOpenRecipe = { navController.navigate(Routes.recipe(it)) },
+                onCook = { navController.navigate(Routes.cook(it)) },
+                // A free user never sees the plan: replace it with the Pro screen so Back returns to the list.
+                onLocked = {
+                    navController.navigate(Routes.PRO) { popUpTo(Routes.MEAL_PLAN) { inclusive = true } }
+                },
             )
         }
         composable(Routes.RECIPE, arguments = idArg) {

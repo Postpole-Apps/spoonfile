@@ -85,11 +85,13 @@ class BackupRepositoryTest {
         val categories: List<CategoryEntity>,
         val links: List<RecipeCategoryCrossRef>,
         val shopping: List<ShoppingItemEntity>,
+        val plan: List<MealPlanEntity>,
     )
 
     private suspend fun snapshot() = Snapshot(
         db.recipeDao().allRecipes(), db.recipeDao().allIngredients(), db.recipeDao().allSteps(),
         db.categoryDao().allCategories(), db.recipeDao().allCrossRefs(), db.shoppingDao().getAll(),
+        db.mealPlanDao().getAll(),
     )
 
     @Test
@@ -98,9 +100,13 @@ class BackupRepositoryTest {
         File(imagesDir, "b.jpg").writeBytes(byteArrayOf(9, 8, 7, 6))
         val cat = db.categoryDao().getOrCreate("Dinner")
         val r1 = addRecipe("u1", "Soup", image = "a.jpg", categories = listOf(cat))
-        addRecipe("u2", "Salad", image = "b.jpg")
+        val r2 = addRecipe("u2", "Salad", image = "b.jpg")
         db.shoppingDao().insertAll(listOf(ShoppingItemEntity(text = "milk", recipeId = r1, position = 1, createdAt = 5)))
+        db.mealPlanDao().append("2026-11-21", r1, now = 7)
+        db.mealPlanDao().append("2026-11-21", r2, now = 8)
+        db.mealPlanDao().append("2026-11-22", r1, now = 9)
         val before = snapshot()
+        assertEquals(3, before.plan.size)
         val zip = export()
 
         assertTrue(entry(zip, "backup.json") != null)
@@ -135,17 +141,50 @@ class BackupRepositoryTest {
     fun export_isVersionedAndNamed() {
         val json = JSONObject(String(entry(export(), "backup.json")!!))
         assertEquals("postpole-backup", json.getString("format"))
-        assertEquals(1, json.getInt("version"))
-        listOf("recipes", "ingredients", "steps", "categories", "recipeCategories", "shoppingItems").forEach {
+        assertEquals(2, json.getInt("version"))
+        listOf("recipes", "ingredients", "steps", "categories", "recipeCategories", "shoppingItems", "mealPlanEntries").forEach {
             assertTrue(it, json.has(it))
         }
     }
 
     @Test
+    fun export_writesMealPlanFields() = runBlocking {
+        val r = addRecipe("u1", "Soup")
+        db.mealPlanDao().append("2026-11-21", r, now = 7)
+        val entries = JSONObject(String(entry(export(), "backup.json")!!)).getJSONArray("mealPlanEntries")
+        val e = entries.getJSONObject(0)
+        assertEquals(1, entries.length())
+        assertEquals("2026-11-21", e.getString("date"))
+        assertEquals(r, e.getLong("recipeId"))
+        assertEquals(0, e.getInt("position"))
+        assertEquals(7L, e.getLong("createdAt"))
+        assertTrue(e.has("id"))
+    }
+
+    @Test
+    fun v1Backup_withoutMealPlan_restoresWithAnEmptyPlan() = runBlocking {
+        addRecipe("u1", "Soup")
+        val v1 = JSONObject(String(entry(export(), "backup.json")!!)).apply {
+            put("version", 1)
+            remove("mealPlanEntries")
+        }
+        // The device has a plan that the v1 restore must replace (with nothing).
+        val other = addRecipe("u2", "Other")
+        db.mealPlanDao().append("2026-11-21", other, now = 1)
+
+        assertEquals(1, import(zipOf("backup.json" to v1.toString().toByteArray())))
+
+        assertEquals(listOf("Soup"), db.recipeDao().allRecipes().map { it.title })
+        assertEquals(0, db.mealPlanDao().countNow())
+    }
+
+    @Test
     fun malformedImport_leavesDataAndPhotosUntouched() = runBlocking {
         File(imagesDir, "keep.jpg").writeBytes(byteArrayOf(4, 2))
-        addRecipe("keep", "Keep", image = "keep.jpg")
+        val keep = addRecipe("keep", "Keep", image = "keep.jpg")
+        db.mealPlanDao().append("2026-11-21", keep, now = 3)
         val before = snapshot()
+        assertEquals(1, before.plan.size)
         val good = JSONObject(String(entry(export(), "backup.json")!!))
 
         fun withJson(edit: (JSONObject) -> Unit): ByteArray {
@@ -165,6 +204,10 @@ class BackupRepositoryTest {
             withJson { it.getJSONArray("recipeCategories").put(JSONObject().put("recipeId", 1).put("categoryId", 77)) },
             withJson { it.getJSONArray("recipes").getJSONObject(0).put("imageFile", "../escape.jpg") },
             withJson { it.getJSONArray("recipes").getJSONObject(0).remove("title") },
+            withJson { it.getJSONArray("mealPlanEntries").getJSONObject(0).put("recipeId", 12345) },
+            withJson { it.getJSONArray("mealPlanEntries").getJSONObject(0).put("date", "not-a-date") },
+            withJson { it.getJSONArray("mealPlanEntries").getJSONObject(0).remove("position") },
+            withJson { it.put("mealPlanEntries", org.json.JSONArray().put(it.getJSONArray("mealPlanEntries").getJSONObject(0)).put(it.getJSONArray("mealPlanEntries").getJSONObject(0))) },
         )
         bad.forEach { bytes ->
             assertThrows(InvalidBackupException::class.java) { runBlocking { import(bytes) } }

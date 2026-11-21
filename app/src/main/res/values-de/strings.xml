@@ -309,4 +309,21 @@
     <string name="role_step">Schritt</string>
     <string name="role_note">Notiz</string>
     <string name="role_ignore">Ignorieren</string>
+
+    <!-- Meal plan (Pro) -->
+    <string name="nav_meal_plan">Wochenplan</string>
+    <string name="pro_feature_meal_plan">Wochenplan für Mahlzeiten</string>
+    <string name="pro_feature_meal_plan_hint">Plane deine gespeicherten Rezepte für die Woche und setze die Zutaten eines Tages auf deine Einkaufsliste</string>
+    <string name="meal_plan_previous_week">Vorherige Woche</string>
+    <string name="meal_plan_next_week">Nächste Woche</string>
+    <string name="meal_plan_this_week">Diese Woche</string>
+    <string name="meal_plan_today">Heute</string>
+    <string name="meal_plan_empty_day">Für diesen Tag ist nichts geplant.</string>
+    <string name="meal_plan_add_recipe">Rezept hinzufügen</string>
+    <string name="meal_plan_add_day_to_shopping">Zutaten dieses Tages zur Einkaufsliste hinzufügen</string>
+    <string name="meal_plan_entry_actions">Rezeptaktionen</string>
+    <string name="meal_plan_open_recipe">Rezept öffnen</string>
+    <string name="meal_plan_remove">Aus dem Plan entfernen</string>
+    <string name="meal_plan_pick_title">Rezept auswählen</string>
+    <string name="meal_plan_nothing_to_add">Keine Zutaten zum Hinzufügen.</string>
 </resources>

@@ -308,4 +308,21 @@
     <string name="role_step">Step</string>
     <string name="role_note">Note</string>
     <string name="role_ignore">Ignore</string>
+
+    <!-- Meal plan (Pro) -->
+    <string name="nav_meal_plan">Meal plan</string>
+    <string name="pro_feature_meal_plan">Weekly meal plan</string>
+    <string name="pro_feature_meal_plan_hint">Plan your saved recipes across the week and add a day\'s ingredients to your shopping list</string>
+    <string name="meal_plan_previous_week">Previous week</string>
+    <string name="meal_plan_next_week">Next week</string>
+    <string name="meal_plan_this_week">This week</string>
+    <string name="meal_plan_today">Today</string>
+    <string name="meal_plan_empty_day">Nothing planned for this day.</string>
+    <string name="meal_plan_add_recipe">Add a recipe</string>
+    <string name="meal_plan_add_day_to_shopping">Add this day\'s ingredients to the shopping list</string>
+    <string name="meal_plan_entry_actions">Recipe actions</string>
+    <string name="meal_plan_open_recipe">Open recipe</string>
+    <string name="meal_plan_remove">Remove from plan</string>
+    <string name="meal_plan_pick_title">Choose a recipe</string>
+    <string name="meal_plan_nothing_to_add">No ingredients to add.</string>
 </resources>

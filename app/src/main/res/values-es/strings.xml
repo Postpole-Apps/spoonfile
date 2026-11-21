@@ -314,4 +314,21 @@
     <string name="role_step">Paso</string>
     <string name="role_note">Nota</string>
     <string name="role_ignore">Ignorar</string>
+
+    <!-- Meal plan (Pro) -->
+    <string name="nav_meal_plan">Plan de comidas</string>
+    <string name="pro_feature_meal_plan">Plan semanal de comidas</string>
+    <string name="pro_feature_meal_plan_hint">Reparte tus recetas guardadas por la semana y añade los ingredientes de un día a tu lista de la compra</string>
+    <string name="meal_plan_previous_week">Semana anterior</string>
+    <string name="meal_plan_next_week">Semana siguiente</string>
+    <string name="meal_plan_this_week">Esta semana</string>
+    <string name="meal_plan_today">Hoy</string>
+    <string name="meal_plan_empty_day">No hay nada planificado para este día.</string>
+    <string name="meal_plan_add_recipe">Añadir una receta</string>
+    <string name="meal_plan_add_day_to_shopping">Añadir los ingredientes de este día a la lista de la compra</string>
+    <string name="meal_plan_entry_actions">Acciones de la receta</string>
+    <string name="meal_plan_open_recipe">Abrir receta</string>
+    <string name="meal_plan_remove">Quitar del plan</string>
+    <string name="meal_plan_pick_title">Elegir una receta</string>
+    <string name="meal_plan_nothing_to_add">No hay ingredientes que añadir.</string>
 </resources>

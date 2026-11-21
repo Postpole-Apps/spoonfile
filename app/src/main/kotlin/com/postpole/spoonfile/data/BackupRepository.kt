@@ -7,6 +7,8 @@ import org.json.JSONObject
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
+import java.time.LocalDate
+import java.time.format.DateTimeParseException
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -22,15 +24,18 @@ internal class BackupData(
     val categories: List<CategoryEntity>,
     val recipeCategories: List<RecipeCategoryCrossRef>,
     val shoppingItems: List<ShoppingItemEntity>,
+    /** Empty for a v1 backup, which has no meal plan. */
+    val mealPlanEntries: List<MealPlanEntity> = emptyList(),
 )
 
 /**
  * Backup of all Room data plus recipe photos as one `.zip` (`backup.json` + `images/`). Works on plain
  * streams; the UI supplies them from the Storage Access Framework, so no storage permission is needed.
  *
- * Format v1: `{"format":"postpole-backup","version":1,"exportedAt":<ms>,` then the arrays `recipes`,
- * `ingredients`, `steps`, `categories`, `recipeCategories`, `shoppingItems`. Add new tables as new
- * top-level arrays and bump [FORMAT_VERSION]; keep reading older versions.
+ * Format: `{"format":"postpole-backup","version":2,"exportedAt":<ms>,` then the arrays `recipes`,
+ * `ingredients`, `steps`, `categories`, `recipeCategories`, `shoppingItems`, `mealPlanEntries` (v2; a v1
+ * file has no such key and restores with an empty plan). Add new tables as new top-level arrays and bump
+ * [FORMAT_VERSION]; keep reading older versions.
  *
  * Restore is never capped by the free recipe limit: it brings back the user's own data. Adding new
  * recipes stays blocked afterwards until Pro, through the normal add checks.
@@ -73,6 +78,17 @@ class BackupRepository @Inject constructor(
                         .put("createdAt", it.createdAt)
                 },
             )
+            .put(
+                "mealPlanEntries",
+                array(db.mealPlanDao().getAll()) {
+                    JSONObject()
+                        .put("id", it.id)
+                        .put("date", it.date)
+                        .put("recipeId", it.recipeId)
+                        .put("position", it.position)
+                        .put("createdAt", it.createdAt)
+                },
+            )
         val files = recipes.mapNotNull { r -> r.imageFile?.let { images.resolve(it) }?.takeIf { it.isFile } }.distinct()
         RecipeBackupZip.write(out, json.toString(2), files)
         return recipes.size
@@ -101,12 +117,14 @@ class BackupRepository @Inject constructor(
                 recipeDao.deleteAllRecipes()
                 db.categoryDao().deleteAllCategories()
                 db.shoppingDao().deleteAll()
+                db.mealPlanDao().deleteAll()
                 db.categoryDao().restoreCategories(data.categories)
                 recipeDao.restoreRecipes(data.recipes)
                 recipeDao.restoreIngredients(data.ingredients)
                 recipeDao.restoreSteps(data.steps)
                 recipeDao.restoreCrossRefs(data.recipeCategories)
                 db.shoppingDao().insertAll(data.shoppingItems)
+                db.mealPlanDao().insertAll(data.mealPlanEntries)
 
                 if (imagesDir.exists() && !imagesDir.renameTo(old)) error("Could not move the photo folder aside")
                 swapped = true
@@ -204,7 +222,26 @@ class BackupRepository @Inject constructor(
             if (shopping.any { it.recipeId != null && it.recipeId !in recipeIds }) {
                 throw InvalidBackupException("Shopping item for an unknown recipe")
             }
-            return BackupData(recipes, ingredients, steps, categories, links, shopping)
+
+            // Absent in a v1 backup: the plan is simply empty.
+            val plan = (root.optJSONArray("mealPlanEntries")?.objects() ?: emptyList()).map { o ->
+                val date = o.getString("date")
+                try {
+                    LocalDate.parse(date)
+                } catch (e: DateTimeParseException) {
+                    throw InvalidBackupException("Bad meal plan date", e)
+                }
+                MealPlanEntity(
+                    id = o.getLong("id"),
+                    date = date,
+                    recipeId = o.getLong("recipeId"),
+                    position = o.getInt("position"),
+                    createdAt = o.getLong("createdAt"),
+                )
+            }
+            requireUnique(plan.map { it.id }, "meal plan entry id")
+            if (plan.any { it.recipeId !in recipeIds }) throw InvalidBackupException("Meal plan entry for an unknown recipe")
+            return BackupData(recipes, ingredients, steps, categories, links, shopping, plan)
         } catch (e: JSONException) {
             throw InvalidBackupException("Malformed backup file", e)
         }
@@ -248,6 +285,6 @@ class BackupRepository @Inject constructor(
 
     companion object {
         const val FORMAT_NAME = "postpole-backup"
-        const val FORMAT_VERSION = 1
+        const val FORMAT_VERSION = 2
     }
 }

@@ -29,6 +29,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.List
@@ -97,6 +98,7 @@ fun RecipeListScreen(
     onScanPage: () -> Unit,
     onImportFile: () -> Unit,
     onOpenShopping: () -> Unit,
+    onOpenMealPlan: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenPro: () -> Unit,
     viewModel: RecipeListViewModel = hiltViewModel(),
@@ -160,6 +162,10 @@ fun RecipeListScreen(
                 actions = {
                     IconButton(onClick = onOpenShopping) {
                         Icon(painterResource(R.drawable.ic_cart), contentDescription = stringResource(R.string.nav_shopping_list))
+                    }
+                    // Visible to everyone; a free user who opens it is sent to the Pro screen.
+                    IconButton(onClick = onOpenMealPlan) {
+                        Icon(Icons.Filled.DateRange, contentDescription = stringResource(R.string.nav_meal_plan))
                     }
                     TextButton(onClick = onOpenPro) { Text(stringResource(R.string.nav_pro)) }
                     IconButton(onClick = onOpenSettings) {

@@ -212,9 +212,14 @@ class CopyRulesTest {
     }
 
     @Test
-    fun listingKeywordsAvoidMealPlannerAndHasTheRequiredOnes() {
+    fun listingHasTheRequiredKeywordsAndOnlyAFactualMealPlanMention() {
         val text = listing.lowercase()
-        assertFalse(text.contains("meal planner"))
+        val (locales, outside) = CopyRules.parseListing(listing)
+        // The meal plan is a Pro feature: stated as a plain bullet in the EN full description only, never
+        // in the title, short description or keyword list (no keyword stuffing).
+        assertTrue(locales.first().fullDescription.contains("Pro includes a weekly meal plan"))
+        assertFalse(outside.lowercase().contains("meal plan"))
+        assertEquals(1, Regex("meal plan").findAll(text).count())
         listOf("recipe organizer", "recipe keeper", "recipe box", "pay once", "no subscription", "shopping list")
             .forEach { assertTrue("missing keyword $it", text.contains(it)) }
     }
