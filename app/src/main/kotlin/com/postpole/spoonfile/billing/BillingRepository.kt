@@ -166,7 +166,12 @@ class BillingRepository(
     }
 
     /** User-initiated restore. */
-    suspend fun restore(): Boolean = refresh()
+    suspend fun restore(): RestoreResult {
+        val refreshed = refresh()
+        // Read the store, not the stateIn values: those can lag the write that refresh() just made.
+        val prefs = dataStore.data.first()
+        return RestoreResult.from(refreshed, prefs[IS_PRO] ?: false, prefs[HAS_REMOVE_ADS] ?: false)
+    }
 
     /** Call when the app comes to the foreground to pick up pending completions and refunds. */
     fun onForeground() {

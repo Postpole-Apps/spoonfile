@@ -42,6 +42,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.postpole.spoonfile.R
 import com.postpole.spoonfile.billing.BillingMessage
+import com.postpole.spoonfile.billing.RestoreResult
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -55,6 +56,10 @@ fun ProScreen(onBack: () -> Unit, viewModel: ProViewModel = hiltViewModel()) {
     val snackbarHostState = remember { SnackbarHostState() }
     val purchaseError = stringResource(R.string.pro_error_purchase)
     val launchError = stringResource(R.string.pro_error_launch)
+    val restoreMessages = RestoreResult.entries.associateWith { stringResource(it.messageRes()) }
+    LaunchedEffect(viewModel) {
+        viewModel.restoreResults.collect { snackbarHostState.showSnackbar(restoreMessages.getValue(it)) }
+    }
     LaunchedEffect(viewModel) {
         viewModel.messages.collect {
             snackbarHostState.showSnackbar(

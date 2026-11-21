@@ -467,4 +467,31 @@ class BillingRepositoryTest {
         assertEquals(3, gateway.connectCalls)
         assertFalse(repo.isPro.value)
     }
+
+    // The repo is never started, so the stateIn flows stay false: restore() must read the store.
+    @Test fun restore_proFound_returnsRestoredImmediately() = runTest {
+        val repo = repo()
+        gateway.owned = listOf(purchased)
+        assertEquals(RestoreResult.RESTORED, repo.restore())
+    }
+
+    @Test fun restore_removeAdsFound_returnsRestoredImmediately() = runTest {
+        val repo = repo()
+        gateway.owned = listOf(
+            OwnedPurchase("ra", PurchaseStatus.PURCHASED, acknowledged = false, product = BillingProduct.REMOVE_ADS),
+        )
+        assertEquals(RestoreResult.RESTORED, repo.restore())
+    }
+
+    @Test fun restore_nothingOwned_returnsNothingToRestore() = runTest {
+        val repo = repo()
+        gateway.owned = emptyList()
+        assertEquals(RestoreResult.NOTHING_TO_RESTORE, repo.restore())
+    }
+
+    @Test fun restore_queryFails_returnsFailed() = runTest {
+        val repo = repo()
+        gateway.owned = null
+        assertEquals(RestoreResult.FAILED, repo.restore())
+    }
 }

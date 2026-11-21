@@ -56,17 +56,25 @@ class RecipeDetailViewModel @Inject constructor(
     suspend fun loadPhoto(name: String, maxEdge: Int): ImageBitmap? = repository.loadPhoto(name, maxEdge)?.asImageBitmap()
 
     fun stepServings(delta: Int) {
-        val current = state.value.servings ?: return
+        val current = shownServings(state.value) ?: return
         servingsOverride.value = (current + delta).coerceAtLeast(1.0)
     }
+
+    /**
+     * Servings shown now. Reads [servingsOverride] directly because [state] is a stateIn flow whose value
+     * can lag a just-made change.
+     */
+    private fun shownServings(current: RecipeDetailUiState): Double? =
+        servingsOverride.value ?: current.details?.recipe?.servings
 
     /** Adds the chosen ingredients to the shopping list using the quantities for the servings shown now. */
     fun addToShopping(ingredientIds: Set<Long>, onAdded: (Int) -> Unit) {
         val current = state.value
         val details = current.details ?: return
+        val scale = current.copy(servings = shownServings(current)).scale
         val lines = details.ingredients
             .filter { !it.isHeader && it.id in ingredientIds }
-            .map { QuantityScaler.scale(it.text, current.scale) }
+            .map { QuantityScaler.scale(it.text, scale) }
         viewModelScope.launch { onAdded(shopping.addRecipeLines(recipeId, lines)) }
     }
 
