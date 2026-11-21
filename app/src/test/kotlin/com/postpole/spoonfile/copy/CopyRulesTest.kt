@@ -19,6 +19,8 @@ internal object CopyRules {
         "Paprika ist eine Marke ihres Inhabers; diese App steht in keiner Verbindung zu ihr.",
         "Paprika est une marque de son propriétaire ; cette application n'est pas affiliée à celle-ci.",
         "Paprika es una marca de su propietario; esta aplicación no está afiliada a ella.",
+        "Paprika é uma marca de seu proprietário; este aplicativo não é afiliado a ela.",
+        "Paprika è un marchio del rispettivo titolare; questa app non è affiliata.",
     )
 
     private val banned = listOf(
@@ -28,12 +30,16 @@ internal object CopyRules {
         "ohne Internet", "kein Internet", "Flugmodus", "ohne Netz",
         "sans Internet", "sans connexion", "mode avion",
         "sin internet", "modo avión",
+        // it / pt-BR synonyms of the same claim
+        "senza Internet", "senza connessione", "modalità aereo",
+        "sem Internet", "sem conexão", "sem conexao", "modo avião", "modo aviao",
     )
 
-    /** Ads are planned, so the copy must not promise an ad-free app (en / de / fr / es). */
+    /** Ads are planned, so the copy must not promise an ad-free app (en / de / fr / es / it / pt-BR). */
     private val noAdsClaims = Regex(
         "no ads|ad-free|ad free|without ads|free of ads|ohne werbung|keine werbung|werbefrei|" +
-            "aucune publicité|sans publicité|sin anuncios|sin publicidad",
+            "aucune publicité|sans publicité|sin anuncios|sin publicidad|" +
+            "senza pubblicità|senza inserzioni|senza ads|sem anúncios|sem anuncios|sem publicidade|sem ads",
         RegexOption.IGNORE_CASE,
     )
 
@@ -128,8 +134,8 @@ class CopyRulesTest {
     // --- strings.xml ---
 
     @Test
-    fun scansTheDefaultAndAllThreeTranslations() {
-        assertEquals(listOf("values", "values-de", "values-es", "values-fr"), stringsFiles().map { it.parentFile.name })
+    fun scansTheDefaultAndAllFiveTranslations() {
+        assertEquals(listOf("values", "values-de", "values-es", "values-fr", "values-it", "values-pt-rBR"),stringsFiles().map { it.parentFile.name })
     }
 
     @Test
@@ -152,7 +158,7 @@ class CopyRulesTest {
     @Test
     fun translationsCoverEveryKeyAndAreFlaggedForReview() {
         val base = keys(File(resDir, "values/strings.xml"))
-        for (lang in listOf("de", "fr", "es")) {
+        for (lang in listOf("de", "fr", "es", "it", "pt-rBR")) {
             val file = File(resDir, "values-$lang/strings.xml")
             assertEquals("values-$lang is missing keys", emptySet<String>(), base - keys(file))
             assertEquals("values-$lang has extra keys", emptySet<String>(), keys(file) - base)
@@ -206,7 +212,8 @@ class CopyRulesTest {
     @Test
     fun noAdsClaimsAreCaughtInEveryLanguage() {
         listOf("No ads", "An AD-FREE app", "Without ads", "Free of ads", "Keine Werbung", "Ohne Werbung", "werbefrei",
-            "aucune publicité", "Sans publicité", "sin anuncios", "Sin publicidad")
+            "aucune publicité", "Sans publicité", "sin anuncios", "Sin publicidad",
+            "Senza pubblicità", "senza inserzioni", "Senza ads", "Sem anúncios", "sem publicidade", "Sem ads")
             .forEach { assertTrue(it, CopyRules.noAdsClaims(it).isNotEmpty()) }
         assertTrue(CopyRules.noAdsClaims("Your data is stored on your device").isEmpty())
     }
@@ -222,9 +229,10 @@ class CopyRulesTest {
     }
 
     @Test
-    fun listingHasAllFourLanguagesWithinLimits() {
+    fun listingHasAllSixLanguagesWithinLimits() {
         val (locales, _) = CopyRules.parseListing(listing)
-        assertEquals(4, locales.size)
+        assertEquals(6, locales.size)
+        assertEquals(CopyRules.TRADEMARK_LINES.size, locales.size)
         for (l in locales) {
             assertTrue("${l.name}: title is empty", l.title.isNotEmpty())
             assertTrue("${l.name}: title ${l.title.length} > ${CopyRules.TITLE_MAX}", l.title.length <= CopyRules.TITLE_MAX)
@@ -289,7 +297,9 @@ class CopyRulesTest {
         listOf("Works OFFLINE", "Fonctionne hors ligne", "Funciona sin conexión", "No internet needed", "Works without internet", "No data collected",
             "Funktioniert OHNE Internet", "Kein Internet nötig", "Auch im Flugmodus", "Läuft ohne Netz",
             "Fonctionne sans Internet", "Sans connexion", "Même en mode avion",
-            "Funciona sin internet", "Incluso en modo avión")
+            "Funciona sin internet", "Incluso en modo avión",
+            "Funziona offline", "Senza Internet", "Anche senza connessione", "Anche in modalità aereo",
+            "Funciona sem Internet", "Sem conexão", "Mesmo em modo avião")
             .forEach { assertTrue(it, CopyRules.bannedPhrases(it).isNotEmpty()) }
         assertTrue(CopyRules.bannedPhrases("Your recipes stay on your device").isEmpty())
     }
