@@ -38,6 +38,7 @@ Spoonfile is a recipe organizer you pay for once. Save recipes from any recipe w
 • Scan cookbook pages with your camera.
 • Scale servings, cook step by step with the screen kept on, and build a shopping list.
 • 75 recipes free. Unlock unlimited recipes with a one-time purchase.
+• Pro includes a weekly meal plan: plan your saved recipes day by day.
 • Bring your collection: import .paprikarecipes files. Export anytime to a backup file or to .paprikarecipes, a format other recipe apps can import.
 • Moving to a new phone? Android's phone-to-phone transfer brings your recipes along.
 
@@ -61,6 +62,7 @@ Spoonfile ist ein Rezept-Organizer, den du nur einmal bezahlst. Speichere Rezept
 • Kochbuchseiten mit der Kamera scannen.
 • Portionen umrechnen, Schritt für Schritt kochen, während der Bildschirm an bleibt, und eine Einkaufsliste anlegen.
 • 75 Rezepte kostenlos. Schalte unbegrenzt viele Rezepte mit einem einmaligen Kauf frei.
+• Pro enthält einen Wochenplan für Mahlzeiten: Plane deine gespeicherten Rezepte Tag für Tag.
 • Bring deine Sammlung mit: Importiere .paprikarecipes-Dateien. Exportiere jederzeit in eine Sicherungsdatei oder als .paprikarecipes, ein Format, das andere Rezept-Apps importieren können.
 • Wechsel aufs neue Handy? Die Handy-zu-Handy-Übertragung von Android bringt deine Rezepte mit.
 
@@ -84,6 +86,7 @@ Spoonfile est un carnet de recettes que vous payez une seule fois. Enregistrez d
 • Scannez les pages de vos livres de cuisine avec l'appareil photo.
 • Ajustez les portions, cuisinez étape par étape avec l'écran allumé et préparez une liste de courses.
 • 75 recettes gratuites. Débloquez les recettes illimitées avec un achat unique.
+• Pro inclut un planning hebdomadaire des repas : planifiez vos recettes enregistrées jour par jour.
 • Apportez votre collection : importez des fichiers .paprikarecipes. Exportez à tout moment vers un fichier de sauvegarde ou en .paprikarecipes, un format que d'autres applis de recettes peuvent importer.
 • Vous changez de téléphone ? Le transfert de téléphone à téléphone d'Android emporte vos recettes.
 
@@ -107,6 +110,7 @@ Spoonfile es un organizador de recetas que pagas una sola vez. Guarda recetas de
 • Escanea páginas de libros de cocina con la cámara.
 • Ajusta las raciones, cocina paso a paso con la pantalla encendida y crea una lista de la compra.
 • 75 recetas gratis. Desbloquea recetas ilimitadas con una compra única.
+• Pro incluye un plan semanal de comidas: planifica tus recetas guardadas día a día.
 • Trae tu colección: importa archivos .paprikarecipes. Exporta cuando quieras a un archivo de copia de seguridad o a .paprikarecipes, un formato que otras aplicaciones de recetas pueden importar.
 • ¿Cambias de teléfono? La transferencia de teléfono a teléfono de Android se lleva tus recetas.
 
