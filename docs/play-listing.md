@@ -10,7 +10,7 @@ section, with the text directly under them. Title limit 30 characters, short des
 
 **Privacy policy URL:** https://pocket-ledger-postpole.web.app/spoonfile/privacy
 
-DE, FR and ES drafts below are machine-assisted translations and are marked **needs native review**.
+DE, FR, ES, pt-BR and IT drafts below are machine-assisted translations and are marked **needs native review**.
 
 ## Keywords (US)
 
@@ -115,6 +115,54 @@ Spoonfile es un organizador de recetas que pagas una sola vez. Guarda recetas de
 • ¿Cambias de teléfono? La transferencia de teléfono a teléfono de Android se lleva tus recetas.
 
 Paprika es una marca de su propietario; esta aplicación no está afiliada a ella.
+
+## Português (Brasil) (pt-BR) — needs native review
+
+### Title
+
+Spoonfile: Livro de Receitas
+
+### Short description
+
+Salve receitas de sites e livros. Seus dados ficam no seu dispositivo.
+
+### Full description
+
+O Spoonfile é um organizador de receitas que você paga uma só vez. Salve receitas de qualquer site de receitas, digitalize uma página do seu livro de culinária ou digite as receitas da família. Seus dados ficam armazenados no seu dispositivo; não precisa de conta.
+
+• Salve de qualquer site: compartilhe um link do seu navegador e o Spoonfile extrai os ingredientes e o modo de preparo.
+• Digitalize páginas de livros de culinária com a câmera.
+• Ajuste as porções, cozinhe passo a passo com a tela acesa e monte uma lista de compras.
+• 75 receitas grátis. Desbloqueie receitas ilimitadas com uma compra única.
+• O Pro inclui um planejamento semanal de refeições: planeje suas receitas salvas dia a dia.
+• Traga sua coleção: importe arquivos .paprikarecipes. Exporte quando quiser para um arquivo de backup ou para .paprikarecipes, um formato que outros aplicativos de receitas podem importar.
+• Vai trocar de celular? A transferência de celular para celular do Android leva suas receitas junto.
+
+Paprika é uma marca de seu proprietário; este aplicativo não é afiliado a ela.
+
+## Italiano (IT) — needs native review
+
+### Title
+
+Spoonfile: Ricettario
+
+### Short description
+
+Salva ricette da siti e libri. I dati sono archiviati sul tuo dispositivo.
+
+### Full description
+
+Spoonfile è un ricettario che paghi una volta sola. Salva ricette da qualsiasi sito di ricette, scansiona una pagina del tuo libro di cucina o scrivi le ricette di famiglia. I tuoi dati sono archiviati sul tuo dispositivo; nessun account necessario.
+
+• Salva da qualsiasi sito: condividi un link dal browser e Spoonfile ne estrae ingredienti e procedimento.
+• Scansiona le pagine dei libri di cucina con la fotocamera.
+• Adatta le porzioni, cucina passo dopo passo con lo schermo acceso e crea una lista della spesa.
+• 75 ricette gratis. Sblocca ricette illimitate con un acquisto una tantum.
+• Pro include un piano pasti settimanale: pianifica le tue ricette salvate giorno per giorno.
+• Porta la tua raccolta: importa file .paprikarecipes. Esporta quando vuoi in un file di backup o in .paprikarecipes, un formato che altre app di ricette possono importare.
+• Stai cambiando telefono? Il trasferimento da telefono a telefono di Android porta con sé le tue ricette.
+
+Paprika è un marchio del rispettivo titolare; questa app non è affiliata.
 
 ## Play Console checklist (first upload is ads-era)
 
