@@ -12,6 +12,8 @@ import com.postpole.spoonfile.data.MealPlanRepository
 import com.postpole.spoonfile.data.MealPlanRow
 import com.postpole.spoonfile.data.RecipeEntity
 import com.postpole.spoonfile.data.RecipeRepository
+import com.postpole.spoonfile.pro.NoOpProPromptSignals
+import com.postpole.spoonfile.pro.ProPromptSignals
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
@@ -69,6 +71,7 @@ class MealPlanViewModel @Inject constructor(
     private val recipes: RecipeRepository,
     private val billing: BillingRepository,
     private val analytics: Analytics,
+    private val proPrompts: ProPromptSignals = NoOpProPromptSignals,
 ) : ViewModel() {
 
     /** Overridable in tests. */
@@ -119,6 +122,7 @@ class MealPlanViewModel @Inject constructor(
                 val count = plan.observeRange(weekStart.value, weekStart.value.plusDays(6)).first().size
                 analytics.logEvent(AnalyticsEvents.MEAL_PLAN_VIEW, mapOf(AnalyticsParams.ITEM_COUNT to count))
             } else {
+                proPrompts.recordHardGate()
                 _events.send(MealPlanEvent.OpenPro)
             }
         }
@@ -186,6 +190,7 @@ class MealPlanViewModel @Inject constructor(
 
     private fun requirePro(): Boolean {
         if (billing.isPro.value) return true
+        viewModelScope.launch { proPrompts.recordHardGate() }
         _events.trySend(MealPlanEvent.OpenPro)
         return false
     }

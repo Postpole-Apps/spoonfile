@@ -42,6 +42,17 @@ object AnalyticsEvents {
 
     /** Plan ingredients were added to the shopping list. [AnalyticsParams.ITEM_COUNT] = lines added. */
     const val MEAL_PLAN_SHOP = "meal_plan_shop"
+
+    // --- Automatic Pro prompts. Params: TRIGGER and SURFACE (and METHOD on dismiss); enums only. ---
+
+    /** An automatic Pro prompt (card or sheet) was put on screen. */
+    const val PRO_PROMPT_SHOWN = "pro_prompt_shown"
+
+    /** The prompt was dismissed. Adds [AnalyticsParams.METHOD] (a [ProPromptDismissMethod] value). */
+    const val PRO_PROMPT_DISMISSED = "pro_prompt_dismissed"
+
+    /** The prompt's call to action (open the Pro screen) was tapped. */
+    const val PRO_PROMPT_CTA_TAP = "pro_prompt_cta_tap"
 }
 
 object AnalyticsParams {
@@ -56,6 +67,27 @@ object AnalyticsParams {
     const val PRODUCT_ID = "product_id"
     const val PRICE_MICROS = "price_micros"
     const val SOURCE = "source"
+
+    /**
+     * Why the Pro screen was opened: `auto_recipes_milestone`, `auto_cook_or_save_milestone` (automatic prompts), or
+     * the trigger of an automatic prompt on `pro_prompt_*` events (`recipes_milestone`, `cook_or_save_milestone`).
+     */
+    const val TRIGGER = "trigger"
+
+    /** `card` or `sheet`. */
+    const val SURFACE = "surface"
+
+    /** A [ProPromptDismissMethod] value. */
+    const val METHOD = "method"
+}
+
+/** Values for [AnalyticsParams.METHOD] on `pro_prompt_dismissed`. */
+object ProPromptDismissMethod {
+    const val CLOSE = "close"
+    const val NOT_NOW = "not_now"
+
+    /** Scrim tap or system back. */
+    const val SWIPE = "swipe"
 }
 
 /** Values for [AnalyticsParams.SOURCE] on `ad_paywall_entry`. Only the settings row exists today. */

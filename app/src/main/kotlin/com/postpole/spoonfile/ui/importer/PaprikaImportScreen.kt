@@ -184,7 +184,7 @@ private fun PreviewList(state: PaprikaState.Preview, viewModel: PaprikaImportVie
                             stringResource(R.string.file_free_room, Limits.FREE_RECIPE_LIMIT, state.remaining, state.newCount),
                             style = MaterialTheme.typography.bodyMedium,
                         )
-                        TextButton(onClick = onOpenPro) { Text(stringResource(R.string.file_unlock_pro)) }
+                        TextButton(onClick = { viewModel.onUnlockPro(); onOpenPro() }) { Text(stringResource(R.string.file_unlock_pro)) }
                     }
                 }
             }

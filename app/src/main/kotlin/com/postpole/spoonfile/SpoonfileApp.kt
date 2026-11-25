@@ -25,6 +25,7 @@ class SpoonfileApp : Application() {
     @Inject lateinit var analytics: Analytics
     @Inject lateinit var dataStore: DataStore<Preferences>
     @Inject lateinit var ads: AdsController
+    @Inject lateinit var proPrompts: com.postpole.spoonfile.pro.ProPromptController
 
     override fun onCreate() {
         super.onCreate()
@@ -37,6 +38,7 @@ class SpoonfileApp : Application() {
                 override fun onStart(owner: LifecycleOwner) {
                     billing.onForeground()
                     ads.onForeground()
+                    proPrompts.onForeground()
                 }
             },
         )

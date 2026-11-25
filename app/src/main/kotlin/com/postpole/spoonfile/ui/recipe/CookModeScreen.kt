@@ -116,7 +116,7 @@ fun CookModeScreen(onBack: () -> Unit, viewModel: RecipeDetailViewModel = hiltVi
                 TextButton(onClick = onBack) { Text(stringResource(R.string.cook_exit), color = content) }
             }
         } else {
-            CookPager(details, pages, state.scale, content, background, onBack)
+            CookPager(details, pages, state.scale, content, background, onBack, onCompleted = viewModel::onCookCompleted)
         }
     }
 }
@@ -130,6 +130,7 @@ private fun CookPager(
     content: Color,
     background: Color,
     onBack: () -> Unit,
+    onCompleted: suspend () -> Unit,
 ) {
     val pagerState = rememberPagerState { pages.size }
     val scope = rememberCoroutineScope()
@@ -206,7 +207,9 @@ private fun CookPager(
                 Text(stringResource(R.string.cook_ingredients), color = content)
             }
             Button(
-                onClick = { if (last) onBack() else scope.launch { pagerState.animateScrollToPage(page + 1) } },
+                // "Done" on the last step is a completion; Exit / back is not. Recorded before leaving so the
+                // list sees it when it decides on an automatic Pro prompt.
+                onClick = { if (last) scope.launch { onCompleted(); onBack() } else scope.launch { pagerState.animateScrollToPage(page + 1) } },
                 modifier = Modifier.height(56.dp).weight(1f),
             ) { Text(stringResource(if (last) R.string.cook_done else R.string.cook_next)) }
         }
