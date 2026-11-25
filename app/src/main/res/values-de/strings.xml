@@ -233,6 +233,7 @@
     <string name="pro_restore_nothing">Nichts wiederherzustellen</string>
     <string name="pro_restore_failed">Käufe konnten nicht wiederhergestellt werden. Bitte versuche es erneut.</string>
     <string name="pro_pending">Dein Kauf ist ausstehend. Pro wird freigeschaltet, sobald die Zahlung abgeschlossen ist.</string>
+    <string name="pro_owned_headline">Spoonfile Pro ist aktiv</string>
     <string name="pro_active">Pro aktiv</string>
     <string name="pro_locked">Diese Funktion gehört zu Pro.</string>
     <string name="upgrade_to_pro">Auf Pro upgraden</string>
@@ -246,6 +247,7 @@
     <string name="settings_remove_ads_hint">Blendet nur die Werbung aus. Pro hebt außerdem das Rezeptlimit auf und bringt den Import ganzer Dateien.</string>
     <string name="settings_remove_ads_pending">Dein Kauf ist ausstehend. Die Werbung verschwindet, sobald die Zahlung abgeschlossen ist.</string>
     <string name="settings_remove_ads_unavailable">Gerade nicht verfügbar. Tippe, um es erneut zu versuchen.</string>
+    <string name="settings_remove_ads_unavailable_snackbar">Werbung entfernen ist gerade nicht verfügbar. Es wird erneut versucht…</string>
     <string name="settings_section_recipes">Rezepte</string>
     <string name="settings_categories">Kategorien</string>
     <string name="settings_categories_hint">Erstellen, umbenennen, sortieren und löschen</string>

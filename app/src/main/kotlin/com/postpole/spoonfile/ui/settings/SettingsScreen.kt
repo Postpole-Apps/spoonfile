@@ -42,6 +42,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -62,7 +63,51 @@ import com.postpole.spoonfile.ads.rememberAdsController
 import com.postpole.spoonfile.data.ThemeMode
 import com.postpole.spoonfile.exporter.PaprikaArchiveWriter
 import java.text.DateFormat
+import kotlinx.coroutines.launch
 import java.util.Date
+
+/**
+ * The Remove ads row. With a price a tap starts the purchase. Without one it retries loading the
+ * product, and when Play already said it is unavailable it also gives feedback via [onUnavailableTap].
+ */
+@Composable
+internal fun RemoveAdsRow(
+    price: String?,
+    unavailable: Boolean,
+    pending: Boolean,
+    onBuy: () -> Unit,
+    onRetry: () -> Unit,
+    onUnavailableTap: () -> Unit,
+) {
+    // The price only ever comes from Play; until it loads, no price is shown.
+    ListItem(
+        headlineContent = {
+            Text(
+                price?.let { stringResource(R.string.settings_remove_ads, it) }
+                    ?: stringResource(R.string.settings_remove_ads_no_price),
+            )
+        },
+        supportingContent = {
+            Text(
+                stringResource(
+                    when {
+                        pending -> R.string.settings_remove_ads_pending
+                        price == null && unavailable -> R.string.settings_remove_ads_unavailable
+                        else -> R.string.settings_remove_ads_hint
+                    },
+                ),
+            )
+        },
+        modifier = Modifier.heightIn(min = 64.dp).clickable(enabled = !pending) {
+            if (price != null) {
+                onBuy()
+            } else {
+                if (unavailable) onUnavailableTap()
+                onRetry()
+            }
+        },
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -84,6 +129,7 @@ fun SettingsScreen(
     val context = LocalContext.current
     val resolver = context.contentResolver
     val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     // No ads are ever shown on this screen; it only reopens the UMP privacy options form.
     val ads = rememberAdsController()
     val activity = LocalActivity.current
@@ -124,30 +170,14 @@ fun SettingsScreen(
             if (showRemoveAdsRow) {
                 LaunchedEffect(Unit) { viewModel.onRemoveAdsPaywallViewed() }
                 // The price only ever comes from Play; until it loads, no price is shown.
-                ListItem(
-                    headlineContent = {
-                        Text(
-                            removeAdsPrice?.let { stringResource(R.string.settings_remove_ads, it) }
-                                ?: stringResource(R.string.settings_remove_ads_no_price),
-                        )
-                    },
-                    supportingContent = {
-                        Text(
-                            stringResource(
-                                when {
-                                    removeAdsPending -> R.string.settings_remove_ads_pending
-                                    removeAdsPrice == null && removeAdsUnavailable -> R.string.settings_remove_ads_unavailable
-                                    else -> R.string.settings_remove_ads_hint
-                                },
-                            ),
-                        )
-                    },
-                    modifier = Modifier.heightIn(min = 64.dp).clickable(enabled = !removeAdsPending) {
-                        when {
-                            removeAdsPrice != null -> activity?.let(viewModel::buyRemoveAds)
-                            else -> viewModel.retryProducts()
-                        }
-                    },
+                val unavailableMessage = stringResource(R.string.settings_remove_ads_unavailable_snackbar)
+                RemoveAdsRow(
+                    price = removeAdsPrice,
+                    unavailable = removeAdsUnavailable,
+                    pending = removeAdsPending,
+                    onBuy = { activity?.let(viewModel::buyRemoveAds) },
+                    onRetry = viewModel::retryProducts,
+                    onUnavailableTap = { scope.launch { snackbarHostState.showSnackbar(unavailableMessage) } },
                 )
                 HorizontalDivider()
             }
