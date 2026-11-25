@@ -244,6 +244,7 @@ class RecipeEditViewModel @Inject constructor(
             // Existing recipes stay editable even if Pro was revoked; only new ones count against the cap.
             if (existing == null && !repository.canAdd(billing.isPro.value)) {
                 _form.update { it.copy(saving = false) }
+                proPrompts.recordHardGate()
                 _events.trySend(RecipeEditEvent.OpenPro)
                 return@launch
             }

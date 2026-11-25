@@ -16,7 +16,7 @@ class ProPromptPolicyTest {
     )
     private val sheetHistory = ProPromptHistory(engagedEvents = 3)
 
-    private val cardCtx = sheetCtx.copy(recipeCount = 15, atRestPoint = false, sessionCount = 2)
+    private val cardCtx = sheetCtx.copy(recipeCount = 15, atRestPoint = true, sessionCount = 2)
     private val cardHistory = ProPromptHistory()
 
     private fun eval(h: ProPromptHistory, c: ProPromptContext, cfg: ProPromptConfig = config) =
@@ -64,9 +64,14 @@ class ProPromptPolicyTest {
         assertNull(eval(cardHistory, cardCtx.copy(recipeCount = 14)))
     }
 
-    @Test fun card_showsOnColdStartFromSessionTwo() {
+    @Test fun card_showsFromSessionTwoAtRestPoint() {
         assertNull(eval(cardHistory, cardCtx.copy(sessionCount = 1)))
-        assertEquals(ProPromptTrigger.RECIPES_MILESTONE, eval(cardHistory, cardCtx.copy(sessionCount = 2, atRestPoint = false)))
+        assertEquals(ProPromptTrigger.RECIPES_MILESTONE, eval(cardHistory, cardCtx.copy(sessionCount = 2)))
+    }
+
+    @Test fun card_neverOnColdStart() {
+        assertEquals(ProPromptTrigger.RECIPES_MILESTONE, eval(cardHistory, cardCtx))
+        assertNull(eval(cardHistory, cardCtx.copy(atRestPoint = false)))
     }
 
     @Test fun card_hiddenWhileLimitOrBackupBannerShows() {

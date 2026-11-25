@@ -119,7 +119,8 @@ object ProPromptPolicy {
 
     fun cardEligible(config: ProPromptConfig, history: ProPromptHistory, ctx: ProPromptContext): Boolean {
         val id = ProPromptTrigger.RECIPES_MILESTONE.id
-        if (ctx.sessionCount < MIN_CARD_SESSION) return false
+        // Rest points only: never at app launch.
+        if (!ctx.atRestPoint || ctx.sessionCount < MIN_CARD_SESSION) return false
         if (ctx.showBackupNudge || ctx.atLimit) return false
         if ((history.cardDismissals[id] ?: 0) >= MAX_DISMISSALS) return false
         val last = history.lastCardAt

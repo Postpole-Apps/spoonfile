@@ -94,7 +94,8 @@ fun AppNavHost(
                 // Arriving at the list: an automatic Pro prompt is considered first and wins over the one
                 // interstitial placement (leaving detail / cook mode), which is then skipped for the session.
                 route == Routes.RECIPES -> {
-                    val returning = previousRoute != null
+                    // Coming back from the manual Pro screen is not a rest point.
+                    val returning = previousRoute != null && previousRoute != Routes.PRO
                     val afterRecipe = previousRoute == Routes.RECIPE || previousRoute == Routes.COOK
                     pendingInterstitial = scope.launch {
                         val promptShown = proPrompts.onListArrival(atRestPoint = returning)

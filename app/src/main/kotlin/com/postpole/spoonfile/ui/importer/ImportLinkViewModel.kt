@@ -338,6 +338,7 @@ class ImportLinkViewModel @Inject constructor(
         viewModelScope.launch {
             if (!repository.canAdd(billing.isPro.value)) {
                 _form.update { it.copy(saving = false) }
+                proPrompts.recordHardGate()
                 _events.trySend(ImportEvent.OpenPro)
                 return@launch
             }

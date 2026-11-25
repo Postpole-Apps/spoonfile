@@ -28,6 +28,7 @@ import javax.inject.Singleton
 /**
  * Session-level owner of the automatic Pro prompts: asks [ProPromptPolicy] when the user arrives on the Recipes
  * list, remembers what is on screen, and records shown / dismissed / CTA. At most one prompt per session.
+ * A "session" here is a process start (stricter than the 30-minute rule).
  */
 @Singleton
 class ProPromptController @Inject constructor(
