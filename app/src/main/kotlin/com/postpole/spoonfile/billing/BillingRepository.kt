@@ -183,14 +183,19 @@ class BillingRepository(
         if (started) scope.launch { refresh() }
     }
 
-    fun launchPurchase(activity: Activity, product: BillingProduct = BillingProduct.PRO): Boolean {
+    /** `trigger` param for the Pro purchase events when the Pro screen was opened from an automatic prompt. */
+    @Volatile
+    private var proTrigger: String? = null
+
+    fun launchPurchase(activity: Activity, product: BillingProduct = BillingProduct.PRO, trigger: String? = null): Boolean {
+        if (product == BillingProduct.PRO) proTrigger = trigger
         val launched = gateway.launchPurchase(activity, product)
         if (launched) {
             activeFlow = product
             when (product) {
                 BillingProduct.PRO -> analytics.logEvent(
                     AnalyticsEvents.PURCHASE_STARTED,
-                    mapOf(AnalyticsParams.PRODUCT_ID to proProductId),
+                    mapOf(AnalyticsParams.PRODUCT_ID to proProductId) + triggerParam(),
                 )
                 BillingProduct.REMOVE_ADS ->
                     analytics.logEvent(AnalyticsEvents.REMOVE_ADS_PURCHASE_START, removeAdsParams())
@@ -268,6 +273,8 @@ class BillingRepository(
         analytics.logEvent(AnalyticsEvents.REMOVE_ADS_PURCHASE_FAIL, removeAdsParams() + (AnalyticsParams.RESULT to result))
     }
 
+    private fun triggerParam(): Map<String, Any> = proTrigger?.let { mapOf(AnalyticsParams.TRIGGER to it) }.orEmpty()
+
     /** product_id always; price_micros / currency once Play has reported them (never typed in). */
     private fun removeAdsParams(): Map<String, Any> = buildMap {
         put(AnalyticsParams.PRODUCT_ID, removeAdsProductId)
@@ -291,7 +298,7 @@ class BillingRepository(
                         put(AnalyticsParams.CURRENCY, product.currencyCode)
                     }
                 }
-                analytics.logEvent(AnalyticsEvents.PURCHASE, params)
+                analytics.logEvent(AnalyticsEvents.PURCHASE, params + triggerParam())
             }
             Source.REFRESH ->
                 analytics.logEvent(AnalyticsEvents.PURCHASE_RESTORED, mapOf(AnalyticsParams.PRODUCT_ID to proProductId))

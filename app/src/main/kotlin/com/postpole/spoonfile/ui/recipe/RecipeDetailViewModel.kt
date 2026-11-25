@@ -9,6 +9,7 @@ import com.postpole.spoonfile.data.RecipeRepository
 import com.postpole.spoonfile.data.RecipeWithDetails
 import com.postpole.spoonfile.data.ShoppingRepository
 import com.postpole.spoonfile.domain.QuantityScaler
+import com.postpole.spoonfile.promo.ProPromptRecorder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -37,8 +38,14 @@ class RecipeDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val repository: RecipeRepository,
     private val shopping: ShoppingRepository,
+    private val proPrompts: ProPromptRecorder,
 ) : ViewModel() {
     val recipeId: Long = savedStateHandle.get<Long>("id") ?: 0L
+
+    /** Cook mode was finished (the last step's Done). Counts toward the automatic Pro sheet. */
+    fun onCookCompleted() {
+        viewModelScope.launch { proPrompts.recordEngagedEvent() }
+    }
 
     private val servingsOverride = MutableStateFlow<Double?>(null)
 

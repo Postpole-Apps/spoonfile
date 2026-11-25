@@ -20,6 +20,7 @@ import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import com.postpole.spoonfile.BuildConfig
 import com.postpole.spoonfile.billing.BillingRepository
+import com.postpole.spoonfile.promo.ProPromptStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -51,6 +52,8 @@ class AdsController @Inject constructor(
     private val consent: ConsentManager,
     billing: BillingRepository,
     private val dataStore: DataStore<Preferences>,
+    /** Session flags shared with the automatic Pro prompts. */
+    val proPrompts: ProPromptStore,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val sdkReady = MutableStateFlow(false)
@@ -190,6 +193,7 @@ class AdsController @Inject constructor(
     }
 
     private suspend fun recordShown() = historyLock.withLock {
+        proPrompts.interstitialShownThisSession = true
         loadHistory(countSession = false)
         history = InterstitialPolicy.recordShown(history, System.currentTimeMillis())
         dataStore.edit {

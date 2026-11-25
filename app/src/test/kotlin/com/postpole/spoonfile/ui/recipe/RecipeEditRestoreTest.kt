@@ -102,7 +102,7 @@ class RecipeEditRestoreTest {
     private fun newVm(handle: SavedStateHandle) =
         RecipeEditViewModel(handle, repo, db.categoryDao(), billing, object : ReviewPrompter {
             override suspend fun recordPositiveAction() = false
-        })
+        }, com.postpole.spoonfile.promo.NoOpProPromptRecorder)
 
     @Test
     fun restoredDraftOfExistingRecipeUpdatesSameRow() = runBlocking {

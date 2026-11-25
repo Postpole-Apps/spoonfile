@@ -71,6 +71,7 @@ class ImportLinkViewModelPreviewTest {
             BillingRepository(PreviewNoopGateway(), dataStore, scope, log = {}),
             WebPageFetcher(),
             NoOpAnalytics,
+            com.postpole.spoonfile.promo.NoOpProPromptRecorder,
         )
     }
 

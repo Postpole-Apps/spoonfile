@@ -13,6 +13,7 @@ import com.postpole.spoonfile.data.IngredientEntity
 import com.postpole.spoonfile.data.RecipeEntity
 import com.postpole.spoonfile.data.RecipeRepository
 import com.postpole.spoonfile.data.StepEntity
+import com.postpole.spoonfile.promo.ProPromptRecorder
 import com.postpole.spoonfile.review.ReviewPrompter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -105,6 +106,7 @@ class RecipeEditViewModel @Inject constructor(
     private val categoryDao: CategoryDao,
     private val billing: BillingRepository,
     private val review: ReviewPrompter,
+    private val proPrompts: ProPromptRecorder,
 ) : ViewModel() {
     /** 0 means a new recipe. */
     private val recipeId: Long = savedStateHandle.get<Long>("id") ?: 0L
@@ -248,6 +250,7 @@ class RecipeEditViewModel @Inject constructor(
             val base = existing ?: RecipeEntity(uid = UUID.randomUUID().toString(), title = "", createdAt = now, updatedAt = now)
             val id = repository.upsertWithChildren(f.applyTo(base, now), f.ingredientEntities(), f.stepEntities(), f.categoryIds.toList())
             originalImage = f.imageFile
+            proPrompts.recordEngagedEvent()
             val showReview = review.recordPositiveAction()
             _events.trySend(RecipeEditEvent.Saved(id, showReview))
         }

@@ -78,10 +78,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.postpole.spoonfile.BuildConfig
 import com.postpole.spoonfile.R
 import com.postpole.spoonfile.ads.AdBanner
+import com.postpole.spoonfile.analytics.ProPromptMethod
 import com.postpole.spoonfile.data.CategoryWithCount
 import com.postpole.spoonfile.data.Limits
 import com.postpole.spoonfile.data.RecipeEntity
 import com.postpole.spoonfile.data.RecipeSort
+import com.postpole.spoonfile.promo.ProPromptTrigger
 import com.postpole.spoonfile.ui.recipe.BottomFade
 import com.postpole.spoonfile.ui.recipe.RecipePhoto
 import com.postpole.spoonfile.ui.recipe.connectedShape
@@ -101,9 +103,16 @@ fun RecipeListScreen(
     onOpenMealPlan: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenPro: () -> Unit,
+    /** Opens Pro from an automatic prompt's CTA with the `auto_<trigger>` value. */
+    onOpenProFromPrompt: (String) -> Unit,
     viewModel: RecipeListViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val prompt by viewModel.prompt.collectAsStateWithLifecycle()
+    val price by viewModel.price.collectAsStateWithLifecycle()
+    val openPromptCta = { viewModel.onPromptCta()?.let(onOpenProFromPrompt) }
+    // Each time the list comes on screen (cold start or a return) the policy may pick one prompt.
+    LaunchedEffect(viewModel) { viewModel.onListShown() }
     var showAddSheet by rememberSaveable { mutableStateOf(false) }
     var showCategories by rememberSaveable { mutableStateOf(false) }
 
@@ -189,7 +198,17 @@ fun RecipeListScreen(
                     onImport = { viewModel.onAddAction(AddAction.IMPORT_FILE) },
                 )
             } else {
-                RecipeGrid(state, viewModel, onOpenRecipe, onOpenPro, onOpenSettings, onSeeAll = { showCategories = true })
+                RecipeGrid(
+                    state,
+                    viewModel,
+                    onOpenRecipe,
+                    onOpenPro,
+                    onOpenSettings,
+                    onSeeAll = { showCategories = true },
+                    showProCard = prompt == ProPromptTrigger.RECIPES_MILESTONE,
+                    price = price,
+                    onProCardCta = { openPromptCta() },
+                )
             }
 
             BottomFade(height = 140.dp, modifier = Modifier.align(Alignment.BottomCenter))
@@ -220,6 +239,13 @@ fun RecipeListScreen(
         }
     }
 
+    if (prompt == ProPromptTrigger.COOK_OR_SAVE_MILESTONE) {
+        ProPromptSheet(
+            price = price,
+            onCta = { openPromptCta() },
+            onDismiss = viewModel::onPromptDismissed,
+        )
+    }
     if (showAddSheet) {
         AddRecipeSheet(
             onDismiss = { showAddSheet = false },
@@ -290,6 +316,9 @@ private fun RecipeGrid(
     onOpenPro: () -> Unit,
     onOpenSettings: () -> Unit,
     onSeeAll: () -> Unit,
+    showProCard: Boolean,
+    price: String?,
+    onProCardCta: () -> Unit,
 ) {
     val full: LazyGridItemSpanScope.() -> GridItemSpan = { GridItemSpan(maxLineSpan) }
     LazyVerticalGrid(
@@ -322,6 +351,16 @@ private fun RecipeGrid(
         }
         if (state.showBackupNudge) {
             item(span = full) { BackupNudgeBanner(onBackUp = onOpenSettings, onDismiss = viewModel::dismissBackupNudge) }
+        }
+        // Never alongside the limit or backup banners.
+        if (showProCard && !state.atLimit && !state.showBackupNudge) {
+            item(span = full) {
+                ProInlineCard(
+                    price = price,
+                    onCta = onProCardCta,
+                    onDismiss = { viewModel.onPromptDismissed(ProPromptMethod.NOT_NOW) },
+                )
+            }
         }
         if (state.categories.isNotEmpty()) {
             item(span = full) {

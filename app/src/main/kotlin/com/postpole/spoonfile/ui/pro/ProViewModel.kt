@@ -1,6 +1,7 @@
 package com.postpole.spoonfile.ui.pro
 
 import android.app.Activity
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.postpole.spoonfile.R
@@ -25,7 +26,11 @@ fun RestoreResult.messageRes(): Int = when (this) {
 @HiltViewModel
 class ProViewModel @Inject constructor(
     private val billing: BillingRepository,
+    savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
+    /** `auto_<trigger>` when opened from an automatic Pro prompt; null for manual and hard-gate opens. */
+    private val trigger: String? = savedStateHandle.get<String>("trigger")?.takeIf { it.isNotEmpty() }
+
     val isPro: StateFlow<Boolean> = billing.isPro
     val removeAdsOwned: StateFlow<Boolean> = billing.removeAdsOwned
     val price: StateFlow<String?> = billing.price
@@ -37,7 +42,7 @@ class ProViewModel @Inject constructor(
     val restoreResults: Flow<RestoreResult> = _restoreResults.receiveAsFlow()
 
     fun buy(activity: Activity) {
-        billing.launchPurchase(activity)
+        billing.launchPurchase(activity, trigger = trigger)
     }
 
     fun restore() {

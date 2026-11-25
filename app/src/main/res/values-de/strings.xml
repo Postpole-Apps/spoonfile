@@ -341,4 +341,12 @@
     <string name="cook_timer_done">Zeit abgelaufen</string>
     <string name="cook_timer_dismiss">Schließen</string>
     <string name="cook_timer_remaining_cd">Noch %1$s auf dem Timer</string>
+    <string name="pro_prompt_sheet_title">Hol mehr aus deinen Rezepten</string>
+    <string name="pro_prompt_sheet_subtitle">Zahle einmal für Spoonfile Pro. Deine Rezepte bleiben auf deinem Gerät.</string>
+    <string name="pro_prompt_card_title">Wachsende Sammlung? Spoonfile Pro freischalten</string>
+    <string name="pro_prompt_card_body">Speichere unbegrenzt viele Rezepte, plane deine Woche und importiere ganze Rezeptdateien. Einmal zahlen — %1$s.</string>
+    <string name="pro_prompt_card_body_no_price">Speichere unbegrenzt viele Rezepte, plane deine Woche und importiere ganze Rezeptdateien. Einmal zahlen.</string>
+    <string name="pro_prompt_see_pro">Pro ansehen</string>
+    <string name="pro_prompt_not_now">Nicht jetzt</string>
+    <string name="pro_prompt_close_cd">Pro-Hinweis schließen</string>
 </resources>

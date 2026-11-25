@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import com.postpole.spoonfile.analytics.NoOpAnalytics
 import com.postpole.spoonfile.billing.BillingGateway
 import com.postpole.spoonfile.billing.BillingRepository
 import com.postpole.spoonfile.billing.OwnedPurchase
@@ -16,6 +17,8 @@ import com.postpole.spoonfile.data.RecipeEntity
 import com.postpole.spoonfile.data.RecipeRepository
 import com.postpole.spoonfile.data.RecipeSort
 import com.postpole.spoonfile.data.SettingsRepository
+import com.postpole.spoonfile.promo.ProPromptStore
+import com.postpole.spoonfile.promo.StaticProPromptConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -71,7 +74,16 @@ class RecipeListViewModelTest {
         scope = CoroutineScope(Dispatchers.Unconfined + Job())
         val dataStore = PreferenceDataStoreFactory.create(scope = scope) { File(tmp.root, "t.preferences_pb") }
         val billing = BillingRepository(IdleGateway(), dataStore, scope, log = {})
-        vm = RecipeListViewModel(repo, db.categoryDao(), billing, SettingsRepository(dataStore))
+        val prompts = ProPromptStore(dataStore, installedAt = { 0L }, clock = { 0L })
+        vm = RecipeListViewModel(
+            repo,
+            db.categoryDao(),
+            billing,
+            SettingsRepository(dataStore),
+            prompts,
+            StaticProPromptConfig(),
+            NoOpAnalytics,
+        )
     }
 
     @After

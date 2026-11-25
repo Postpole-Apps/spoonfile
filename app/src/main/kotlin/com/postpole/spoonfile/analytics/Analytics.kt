@@ -12,6 +12,17 @@ object AnalyticsEvents {
     const val BACKUP_EXPORTED = "backup_exported"
     const val BACKUP_IMPORTED = "backup_imported"
 
+    // --- Automatic Pro prompts. Params: TRIGGER, SURFACE (and METHOD on dismiss) only; enums, never counts or ids. ---
+
+    /** An automatic Pro prompt (card or sheet) was put on screen. */
+    const val PRO_PROMPT_SHOWN = "pro_prompt_shown"
+
+    /** The prompt was dismissed. Adds [AnalyticsParams.METHOD] (a [ProPromptMethod] value). */
+    const val PRO_PROMPT_DISMISSED = "pro_prompt_dismissed"
+
+    /** The prompt's CTA was tapped (opens the Pro screen). */
+    const val PRO_PROMPT_CTA_TAP = "pro_prompt_cta_tap"
+
     // --- Remove ads (see docs/ads-analytics.md). Params: PRODUCT_ID, PRICE_MICROS, CURRENCY only. ---
 
     /** The Remove ads offer was shown to the user. */
@@ -56,6 +67,22 @@ object AnalyticsParams {
     const val PRODUCT_ID = "product_id"
     const val PRICE_MICROS = "price_micros"
     const val SOURCE = "source"
+
+    /** Enum: `recipes_milestone` | `cook_or_save_milestone`, or `auto_<trigger>` on the Pro screen / purchase events. */
+    const val TRIGGER = "trigger"
+
+    /** Enum: `card` | `sheet`. */
+    const val SURFACE = "surface"
+
+    /** Enum: a [ProPromptMethod] value. */
+    const val METHOD = "method"
+}
+
+/** Values for [AnalyticsParams.METHOD] on `pro_prompt_dismissed`. `swipe` is a scrim tap, drag or system back. */
+object ProPromptMethod {
+    const val CLOSE = "close"
+    const val NOT_NOW = "not_now"
+    const val SWIPE = "swipe"
 }
 
 /** Values for [AnalyticsParams.SOURCE] on `ad_paywall_entry`. Only the settings row exists today. */

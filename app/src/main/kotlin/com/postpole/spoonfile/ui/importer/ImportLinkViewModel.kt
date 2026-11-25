@@ -10,6 +10,7 @@ import com.postpole.spoonfile.analytics.Analytics
 import com.postpole.spoonfile.analytics.AnalyticsEvents
 import com.postpole.spoonfile.analytics.AnalyticsParams
 import com.postpole.spoonfile.billing.BillingRepository
+import com.postpole.spoonfile.promo.ProPromptRecorder
 import com.postpole.spoonfile.data.CategoryDao
 import com.postpole.spoonfile.data.CategoryEntity
 import com.postpole.spoonfile.data.RecipeEntity
@@ -85,6 +86,7 @@ class ImportLinkViewModel @Inject constructor(
     private val billing: BillingRepository,
     private val fetcher: WebPageFetcher,
     private val analytics: Analytics,
+    private val proPrompts: ProPromptRecorder,
 ) : ViewModel() {
     private val _state = MutableStateFlow<ImportState>(ImportState.Input())
     val state: StateFlow<ImportState> = _state
@@ -352,6 +354,7 @@ class ImportLinkViewModel @Inject constructor(
                     categoryIds.toList(),
                 )
                 photoBytes = null
+                proPrompts.recordEngagedEvent()
                 _events.trySend(ImportEvent.Saved(id))
             } catch (e: CancellationException) {
                 storedPhoto?.let { repository.deleteImage(it) }

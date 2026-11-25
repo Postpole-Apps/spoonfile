@@ -116,7 +116,19 @@ fun CookModeScreen(onBack: () -> Unit, viewModel: RecipeDetailViewModel = hiltVi
                 TextButton(onClick = onBack) { Text(stringResource(R.string.cook_exit), color = content) }
             }
         } else {
-            CookPager(details, pages, state.scale, content, background, onBack)
+            CookPager(
+                details,
+                pages,
+                state.scale,
+                content,
+                background,
+                onBack,
+                // Finishing the last step counts as a cook-mode completion; leaving early does not.
+                onDone = {
+                    viewModel.onCookCompleted()
+                    onBack()
+                },
+            )
         }
     }
 }
@@ -130,6 +142,7 @@ private fun CookPager(
     content: Color,
     background: Color,
     onBack: () -> Unit,
+    onDone: () -> Unit,
 ) {
     val pagerState = rememberPagerState { pages.size }
     val scope = rememberCoroutineScope()
@@ -206,7 +219,7 @@ private fun CookPager(
                 Text(stringResource(R.string.cook_ingredients), color = content)
             }
             Button(
-                onClick = { if (last) onBack() else scope.launch { pagerState.animateScrollToPage(page + 1) } },
+                onClick = { if (last) onDone() else scope.launch { pagerState.animateScrollToPage(page + 1) } },
                 modifier = Modifier.height(56.dp).weight(1f),
             ) { Text(stringResource(if (last) R.string.cook_done else R.string.cook_next)) }
         }

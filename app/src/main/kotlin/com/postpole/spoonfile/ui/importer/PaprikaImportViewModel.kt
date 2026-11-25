@@ -12,6 +12,7 @@ import com.postpole.spoonfile.analytics.Analytics
 import com.postpole.spoonfile.analytics.AnalyticsEvents
 import com.postpole.spoonfile.analytics.AnalyticsParams
 import com.postpole.spoonfile.billing.BillingRepository
+import com.postpole.spoonfile.promo.ProPromptRecorder
 import com.postpole.spoonfile.data.CategoryDao
 import com.postpole.spoonfile.data.DedupeKey
 import com.postpole.spoonfile.data.IngredientEntity
@@ -129,6 +130,7 @@ class PaprikaImportViewModel @Inject constructor(
     private val categoryDao: CategoryDao,
     private val billing: BillingRepository,
     private val analytics: Analytics,
+    private val proPrompts: ProPromptRecorder,
     @IoDispatcher private val io: CoroutineDispatcher,
 ) : ViewModel() {
     private val _state = MutableStateFlow<PaprikaState>(PaprikaState.Pick)
@@ -218,6 +220,11 @@ class PaprikaImportViewModel @Inject constructor(
     }
 
     /** Re-reads the file and saves the ticked recipes in file order, never going past the free limit. */
+    /** "Unlock Pro" on an oversized file is a hard gate: automatic prompts rest for 48 hours. */
+    fun onUnlockPro() {
+        viewModelScope.launch { proPrompts.recordHardGate() }
+    }
+
     fun import() {
         val preview = _state.value as? PaprikaState.Preview ?: return
         val source = uri ?: return
@@ -236,6 +243,8 @@ class PaprikaImportViewModel @Inject constructor(
                 saveFailed = saved.failed,
             )
             logResult(if (saved.imported > 0) RESULT_OK else RESULT_NONE)
+            // A whole-file import is one engaged event however many recipes it brought in.
+            if (saved.imported > 0) proPrompts.recordEngagedEvent()
             thumbnails.clear()
             _state.value = PaprikaState.Done(summary)
         }

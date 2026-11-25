@@ -74,7 +74,7 @@ class ShoppingListViewModelTest {
         )
 
     private fun detailVm(recipeId: Long) =
-        RecipeDetailViewModel(SavedStateHandle(mapOf("id" to recipeId)), recipes, shopping)
+        RecipeDetailViewModel(SavedStateHandle(mapOf("id" to recipeId)), recipes, shopping, com.postpole.spoonfile.promo.NoOpProPromptRecorder)
 
     private suspend fun awaitState(predicate: (ShoppingListUiState) -> Boolean): ShoppingListUiState =
         withContext(Dispatchers.Default) { withTimeout(10_000) { vm.state.first(predicate) } }

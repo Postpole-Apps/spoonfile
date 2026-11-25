@@ -115,7 +115,7 @@ class MealPlanViewModelTest {
         val billing = BillingRepository(IdleBillingGateway(), dataStore, scope, log = {})
         val shopping = ShoppingRepository(db.shoppingDao())
         val plan = MealPlanRepository(db.mealPlanDao(), db.recipeDao(), shopping)
-        return MealPlanViewModel(plan, recipes, billing, analytics).also {
+        return MealPlanViewModel(plan, recipes, billing, analytics, com.postpole.spoonfile.promo.NoOpProPromptRecorder).also {
             it.today = { monday.plusDays(2) } // a Wednesday
             it.firstDayOfWeek = DayOfWeek.MONDAY
             it.thisWeek()
