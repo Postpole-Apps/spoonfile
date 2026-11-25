@@ -59,6 +59,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.postpole.spoonfile.R
 import com.postpole.spoonfile.data.RecipeWithDetails
 import com.postpole.spoonfile.domain.QuantityScaler
+import com.postpole.spoonfile.domain.StepTimerParser
 import com.postpole.spoonfile.ui.findActivity
 import com.postpole.spoonfile.ui.theme.CookBackgroundDark
 import com.postpole.spoonfile.ui.theme.CookBackgroundLight
@@ -135,6 +136,9 @@ private fun CookPager(
     var showIngredients by rememberSaveable { mutableStateOf(false) }
     val page = pagerState.currentPage
     val last = page == pages.lastIndex
+    // One timer per cook-mode session; it lives here so it survives step swipes and rotation.
+    var timer by rememberSaveable(stateSaver = CookTimerState.Saver) { mutableStateOf(CookTimerState()) }
+    val suggested = remember(pages, page) { StepTimerParser.parse(pages[page].text) }
 
     Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal = 20.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -180,6 +184,13 @@ private fun CookPager(
                 Text(item.text, fontSize = 31.sp, lineHeight = 40.sp, textAlign = TextAlign.Center)
             }
         }
+
+        CookTimerSection(
+            timer = timer,
+            onTimerChange = { timer = it },
+            suggestedSeconds = suggested,
+            content = content,
+        )
 
         Row(
             Modifier.fillMaxWidth().padding(vertical = 12.dp),

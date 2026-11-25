@@ -337,4 +337,14 @@
     <string name="role_step">Passaggio</string>
     <string name="role_note">Nota</string>
     <string name="role_ignore">Ignora</string>
+    <string name="cook_timer_start">Avvia timer %1$s</string>
+    <string name="cook_timer_quick">Timer</string>
+    <string name="cook_timer_pause">Metti in pausa il timer</string>
+    <string name="cook_timer_resume">Riprendi il timer</string>
+    <string name="cook_timer_reset">Azzera timer</string>
+    <string name="cook_timer_add_minute">+1 min</string>
+    <string name="cook_timer_add_minute_cd">Aggiungi 1 minuto al timer</string>
+    <string name="cook_timer_done">Tempo scaduto</string>
+    <string name="cook_timer_dismiss">Chiudi</string>
+    <string name="cook_timer_remaining_cd">Tempo rimanente: %1$s</string>
 </resources>
