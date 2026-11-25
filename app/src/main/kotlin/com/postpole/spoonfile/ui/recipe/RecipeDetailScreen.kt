@@ -74,9 +74,11 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.ui.semantics.Role
 import com.postpole.spoonfile.domain.QuantityScaler
+import com.postpole.spoonfile.ui.showLatestSnackbar
 import com.postpole.spoonfile.ui.theme.ExtendedFabShape
 import com.postpole.spoonfile.ui.theme.RecipePhotoShape
 import com.postpole.spoonfile.ui.theme.SpoonfilePolygons
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -95,6 +97,7 @@ fun RecipeDetailScreen(
     var showRate by rememberSaveable { mutableStateOf(false) }
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    var shoppingSnackbarJob by remember { mutableStateOf<Job?>(null) }
     var showAddToShopping by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
     val viewList = stringResource(R.string.shopping_view_list)
@@ -228,8 +231,9 @@ fun RecipeDetailScreen(
                 showAddToShopping = false
                 viewModel.addToShopping(ids) { count ->
                     if (count > 0) {
-                        scope.launch {
-                            val result = snackbar.showSnackbar(
+                        shoppingSnackbarJob?.cancel()
+                        shoppingSnackbarJob = scope.launch {
+                            val result = snackbar.showLatestSnackbar(
                                 context.resources.getQuantityString(R.plurals.shopping_added, count, count),
                                 actionLabel = viewList,
                             )

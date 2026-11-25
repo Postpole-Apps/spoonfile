@@ -43,6 +43,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.postpole.spoonfile.R
 import com.postpole.spoonfile.billing.BillingMessage
 import com.postpole.spoonfile.billing.RestoreResult
+import com.postpole.spoonfile.ui.showLatestSnackbar
+import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -58,11 +60,11 @@ fun ProScreen(onBack: () -> Unit, viewModel: ProViewModel = hiltViewModel()) {
     val launchError = stringResource(R.string.pro_error_launch)
     val restoreMessages = RestoreResult.entries.associateWith { stringResource(it.messageRes()) }
     LaunchedEffect(viewModel) {
-        viewModel.restoreResults.collect { snackbarHostState.showSnackbar(restoreMessages.getValue(it)) }
+        viewModel.restoreResults.collectLatest { snackbarHostState.showLatestSnackbar(restoreMessages.getValue(it)) }
     }
     LaunchedEffect(viewModel) {
-        viewModel.messages.collect {
-            snackbarHostState.showSnackbar(
+        viewModel.messages.collectLatest {
+            snackbarHostState.showLatestSnackbar(
                 when (it) {
                     BillingMessage.PURCHASE_ERROR -> purchaseError
                     BillingMessage.LAUNCH_FAILED -> launchError
