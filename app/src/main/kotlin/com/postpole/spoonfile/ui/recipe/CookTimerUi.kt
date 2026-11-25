@@ -71,6 +71,12 @@ private val TimerDigits = TextStyle(
 /**
  * The cook-mode timer area above the Back / Ingredients / Next row: a start pill while idle, the
  * running / paused / finished bar otherwise. Drives the countdown and the end-of-timer alert.
+ *
+ * The alert is in-app only. Per #57 there is no notification permission, foreground service or
+ * exact alarm, so while the screen is off or the app is in the background the countdown tick and
+ * the chime/haptic can be delayed until the app is back in front. The running timer is anchored to
+ * an `elapsedRealtime()` deadline, so it shows the correct (or finished) state as soon as the user
+ * returns, even after the process was killed.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -84,16 +90,13 @@ internal fun CookTimerSection(
     val change by rememberUpdatedState(onTimerChange)
     val running = timer.status == TimerStatus.RUNNING
 
-    // Monotonic-clock ticker: stays accurate even if frames are delayed.
+    // Deadline-based ticker. The first tick is immediate so a restored timer applies time spent away.
     LaunchedEffect(running) {
         if (!running) return@LaunchedEffect
-        var last = SystemClock.elapsedRealtime()
         while (true) {
-            delay(200)
-            val now = SystemClock.elapsedRealtime()
-            change(current.tick(now - last))
-            last = now
+            change(current.tick(SystemClock.elapsedRealtime()))
             if (current.status != TimerStatus.RUNNING) break
+            delay(200)
         }
     }
 
@@ -117,7 +120,7 @@ internal fun CookTimerSection(
                 stringResource(R.string.cook_timer_quick)
             }
             Surface(
-                onClick = { onTimerChange(timer.start(seconds)) },
+                onClick = { onTimerChange(timer.start(seconds, SystemClock.elapsedRealtime())) },
                 shape = CircleShape,
                 color = pill,
                 contentColor = content,
@@ -160,13 +163,14 @@ internal fun CookTimerSection(
                         val toggleCd = stringResource(
                             if (running) R.string.cook_timer_pause else R.string.cook_timer_resume,
                         )
-                        IconButton(onClick = { onTimerChange(if (running) timer.pause() else timer.resume()) }) {
+                        IconButton(onClick = { onTimerChange(SystemClock.elapsedRealtime().let { if (running) timer.pause(it) else timer.resume(it) })
+                        }) {
                             Icon(if (running) PauseIcon else PlayIcon, contentDescription = toggleCd)
                         }
                     }
                     val addCd = stringResource(R.string.cook_timer_add_minute_cd)
                     TextButton(
-                        onClick = { onTimerChange(timer.addMinute()) },
+                        onClick = { onTimerChange(timer.addMinute(SystemClock.elapsedRealtime())) },
                         modifier = Modifier.minimumInteractiveComponentSize().semantics { contentDescription = addCd },
                     ) { Text(stringResource(R.string.cook_timer_add_minute), color = content) }
                     if (finished) {
