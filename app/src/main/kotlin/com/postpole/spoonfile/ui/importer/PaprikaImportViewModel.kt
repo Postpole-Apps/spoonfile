@@ -18,6 +18,8 @@ import com.postpole.spoonfile.data.IngredientEntity
 import com.postpole.spoonfile.data.RecipeEntity
 import com.postpole.spoonfile.data.RecipeOrigin
 import com.postpole.spoonfile.data.RecipeRepository
+import com.postpole.spoonfile.pro.NoOpProPromptSignals
+import com.postpole.spoonfile.pro.ProPromptSignals
 import com.postpole.spoonfile.data.StepEntity
 import com.postpole.spoonfile.di.IoDispatcher
 import com.postpole.spoonfile.importer.paprika.NotAnArchiveException
@@ -130,6 +132,7 @@ class PaprikaImportViewModel @Inject constructor(
     private val billing: BillingRepository,
     private val analytics: Analytics,
     @IoDispatcher private val io: CoroutineDispatcher,
+    private val proPrompts: ProPromptSignals = NoOpProPromptSignals,
 ) : ViewModel() {
     private val _state = MutableStateFlow<PaprikaState>(PaprikaState.Pick)
     val state: StateFlow<PaprikaState> = _state
@@ -236,9 +239,16 @@ class PaprikaImportViewModel @Inject constructor(
                 saveFailed = saved.failed,
             )
             logResult(if (saved.imported > 0) RESULT_OK else RESULT_NONE)
+            // A whole-file import is one engaged event, however many recipes it brought in.
+            if (saved.imported > 0) proPrompts.recordEngaged()
             thumbnails.clear()
             _state.value = PaprikaState.Done(summary)
         }
+    }
+
+    /** "Unlock Pro" on the oversized-file banner is a hard gate for the automatic Pro prompts. */
+    fun onUnlockPro() {
+        viewModelScope.launch { proPrompts.recordHardGate() }
     }
 
     private class Saved(val imported: Int, val failed: Int, val unreadable: Map<PaprikaFailure, Int>)

@@ -6,7 +6,9 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import android.net.Uri
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.postpole.spoonfile.ads.rememberAdsController
+import com.postpole.spoonfile.pro.ProPromptViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import androidx.navigation.NavController
@@ -31,7 +33,8 @@ import com.postpole.spoonfile.ui.settings.SettingsScreen
 object Routes {
     const val RECIPES = "recipes"
     const val SETTINGS = "settings"
-    const val PRO = "pro"
+    /** Pro screen; the optional `trigger` argument says why it opened (`auto_<trigger>` for automatic prompts). */
+    const val PRO = "pro?trigger={trigger}"
     const val CATEGORIES = "categories"
 
     /** Recipe detail; the `id` argument is the recipe's row id. */
@@ -49,6 +52,7 @@ object Routes {
     const val SCAN = "import/scan"
     const val IMPORT_FILE = "import/file"
 
+    fun pro(trigger: String = "") = "pro?trigger=${Uri.encode(trigger)}"
     fun recipe(id: Long) = "recipe/$id"
     fun cook(id: Long) = "recipe/$id/cook"
     fun edit(id: Long = 0L) = "recipe-edit?id=$id"
@@ -57,7 +61,8 @@ object Routes {
 
 private val idArg = listOf(navArgument("id") { type = NavType.LongType })
 private val optionalIdArg = listOf(navArgument("id") { type = NavType.LongType; defaultValue = 0L })
-private val urlArg = listOf(navArgument("url") { type = NavType.StringType; defaultValue = "" })
+private val triggerArg = listOf(navArgument("trigger") { type = NavType.StringType; defaultValue = "" })
+private val urlArg =listOf(navArgument("url") { type = NavType.StringType; defaultValue = "" })
 
 /**
  * [sharedText] is a link (or empty text) received from another app's Share sheet; it is consumed once via
@@ -65,31 +70,41 @@ private val urlArg = listOf(navArgument("url") { type = NavType.StringType; defa
  */
 @Composable
 fun AppNavHost(
-    onScreen: (String) -> Unit = {},
+    onScreen: (String, String?) -> Unit = { _, _ -> },
     sharedText: String? = null,
     onSharedTextHandled: () -> Unit = {},
 ) {
     val navController = rememberNavController()
     val ads = rememberAdsController()
+    val proPrompts = hiltViewModel<ProPromptViewModel>().controller
     val activity = LocalActivity.current
     val scope = rememberCoroutineScope()
-    DisposableEffect(navController, ads, activity) {
+    DisposableEffect(navController, ads, proPrompts, activity) {
         var previousRoute: String? = null
         var pendingInterstitial: Job? = null
-        val listener = NavController.OnDestinationChangedListener { _, destination, _ ->
+        val listener = NavController.OnDestinationChangedListener { _, destination, arguments ->
             val route = destination.route
-            route?.let(onScreen)
+            route?.let { onScreen(it, arguments?.getString("trigger")) }
             // Any navigation abandons a pending interstitial.
             pendingInterstitial?.cancel()
             pendingInterstitial = null
             when {
                 // Reading a recipe: warm one interstitial (only requested if it could be shown).
                 route == Routes.RECIPE || route == Routes.COOK -> ads.preloadInterstitial()
-                // The one interstitial placement: arriving at the list after leaving detail / cook mode.
-                route == Routes.RECIPES && (previousRoute == Routes.RECIPE || previousRoute == Routes.COOK) &&
-                    activity != null -> {
+                // Arriving at the list: an automatic Pro prompt is considered first and wins over the one
+                // interstitial placement (leaving detail / cook mode), which is then skipped for the session.
+                route == Routes.RECIPES -> {
+                    // Coming back from the manual Pro screen is not a rest point.
+                    val returning = previousRoute != null && previousRoute != Routes.PRO
+                    val afterRecipe = previousRoute == Routes.RECIPE || previousRoute == Routes.COOK
                     pendingInterstitial = scope.launch {
-                        ads.showAfterRecipe(activity, stillOnList = { navController.currentDestination?.route == Routes.RECIPES })
+                        val promptShown = proPrompts.onListArrival(atRestPoint = returning)
+                        if (!promptShown && afterRecipe && activity != null) {
+                            ads.showAfterRecipe(
+                                activity,
+                                stillOnList = { navController.currentDestination?.route == Routes.RECIPES },
+                            )
+                        }
                     }
                 }
             }
@@ -101,7 +116,7 @@ fun AppNavHost(
             pendingInterstitial?.cancel()
         }
     }
-    val openPro = { navController.navigate(Routes.PRO) }
+    val openPro = { navController.navigate(Routes.pro()) }
     NavHost(navController = navController, startDestination = Routes.RECIPES) {
         composable(Routes.RECIPES) {
             RecipeListScreen(
@@ -114,6 +129,7 @@ fun AppNavHost(
                 onOpenMealPlan = { navController.navigate(Routes.MEAL_PLAN) },
                 onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                 onOpenPro = { openPro() },
+                onOpenAutoPro = { trigger -> navController.navigate(Routes.pro(trigger)) },
             )
         }
         composable(Routes.RECIPE, arguments = idArg) {
@@ -151,7 +167,7 @@ fun AppNavHost(
         composable(Routes.CATEGORIES) {
             CategoriesScreen(onBack = { navController.popBackStack() })
         }
-        composable(Routes.PRO) {
+        composable(Routes.PRO, arguments = triggerArg) {
             ProScreen(onBack = { navController.popBackStack() })
         }
         composable(Routes.SHOPPING) {
@@ -164,7 +180,7 @@ fun AppNavHost(
                 onCook = { navController.navigate(Routes.cook(it)) },
                 // A free user is sent to Pro in place of the plan, so Back returns to the recipes.
                 onOpenPro = {
-                    navController.navigate(Routes.PRO) { popUpTo(Routes.MEAL_PLAN) { inclusive = true } }
+                    navController.navigate(Routes.pro()) { popUpTo(Routes.MEAL_PLAN) { inclusive = true } }
                 },
             )
         }

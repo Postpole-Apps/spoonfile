@@ -12,6 +12,8 @@ import com.postpole.spoonfile.data.CategoryEntity
 import com.postpole.spoonfile.data.IngredientEntity
 import com.postpole.spoonfile.data.RecipeEntity
 import com.postpole.spoonfile.data.RecipeRepository
+import com.postpole.spoonfile.pro.NoOpProPromptSignals
+import com.postpole.spoonfile.pro.ProPromptSignals
 import com.postpole.spoonfile.data.StepEntity
 import com.postpole.spoonfile.review.ReviewPrompter
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -105,6 +107,7 @@ class RecipeEditViewModel @Inject constructor(
     private val categoryDao: CategoryDao,
     private val billing: BillingRepository,
     private val review: ReviewPrompter,
+    private val proPrompts: ProPromptSignals = NoOpProPromptSignals,
 ) : ViewModel() {
     /** 0 means a new recipe. */
     private val recipeId: Long = savedStateHandle.get<Long>("id") ?: 0L
@@ -241,6 +244,7 @@ class RecipeEditViewModel @Inject constructor(
             // Existing recipes stay editable even if Pro was revoked; only new ones count against the cap.
             if (existing == null && !repository.canAdd(billing.isPro.value)) {
                 _form.update { it.copy(saving = false) }
+                proPrompts.recordHardGate()
                 _events.trySend(RecipeEditEvent.OpenPro)
                 return@launch
             }
@@ -248,6 +252,7 @@ class RecipeEditViewModel @Inject constructor(
             val base = existing ?: RecipeEntity(uid = UUID.randomUUID().toString(), title = "", createdAt = now, updatedAt = now)
             val id = repository.upsertWithChildren(f.applyTo(base, now), f.ingredientEntities(), f.stepEntities(), f.categoryIds.toList())
             originalImage = f.imageFile
+            proPrompts.recordEngaged()
             val showReview = review.recordPositiveAction()
             _events.trySend(RecipeEditEvent.Saved(id, showReview))
         }

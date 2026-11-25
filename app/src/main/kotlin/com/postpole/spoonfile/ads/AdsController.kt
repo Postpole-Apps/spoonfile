@@ -217,7 +217,17 @@ class AdsController @Inject constructor(
         }
     }
 
-    private fun installedAt(): Long = runCatching {
+    /** App sessions so far, including this one. Waits for the start-up load, so it never reads a stale count. */
+    suspend fun sessionCount(): Int = historyLock.withLock {
+        loadHistory(countSession = false)
+        history.sessionCount
+    }
+
+    /** True once an interstitial has actually been shown since this process started. */
+    suspend fun interstitialShownThisSession(): Boolean = historyLock.withLock { history.shownThisSession > 0 }
+
+    /** When the app was first installed (epoch millis). */
+    fun installedAt(): Long = runCatching {
         context.packageManager.getPackageInfo(context.packageName, 0).firstInstallTime
     }.getOrDefault(System.currentTimeMillis())
 

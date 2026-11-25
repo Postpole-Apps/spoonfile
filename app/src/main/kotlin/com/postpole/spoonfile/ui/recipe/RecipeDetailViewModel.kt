@@ -6,6 +6,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.postpole.spoonfile.data.RecipeRepository
+import com.postpole.spoonfile.pro.NoOpProPromptSignals
+import com.postpole.spoonfile.pro.ProPromptSignals
 import com.postpole.spoonfile.data.RecipeWithDetails
 import com.postpole.spoonfile.data.ShoppingRepository
 import com.postpole.spoonfile.domain.QuantityScaler
@@ -37,6 +39,7 @@ class RecipeDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val repository: RecipeRepository,
     private val shopping: ShoppingRepository,
+    private val proPrompts: ProPromptSignals = NoOpProPromptSignals,
 ) : ViewModel() {
     val recipeId: Long = savedStateHandle.get<Long>("id") ?: 0L
 
@@ -77,6 +80,9 @@ class RecipeDetailViewModel @Inject constructor(
             .map { QuantityScaler.scale(it.text, scale) }
         viewModelScope.launch { onAdded(shopping.addRecipeLines(recipeId, lines)) }
     }
+
+    /** Cook mode was finished with "Done" on the last step. */
+    suspend fun onCookCompleted() = proPrompts.recordEngaged()
 
     fun toggleFavorite() = update { it.copy(favorite = !it.favorite) }
 

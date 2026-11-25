@@ -78,6 +78,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.postpole.spoonfile.BuildConfig
 import com.postpole.spoonfile.R
 import com.postpole.spoonfile.ads.AdBanner
+import com.postpole.spoonfile.analytics.ProPromptDismissMethod
+import com.postpole.spoonfile.pro.ProPromptTrigger
+import com.postpole.spoonfile.pro.ProPromptViewModel
 import com.postpole.spoonfile.data.CategoryWithCount
 import com.postpole.spoonfile.data.Limits
 import com.postpole.spoonfile.data.RecipeEntity
@@ -101,9 +104,15 @@ fun RecipeListScreen(
     onOpenMealPlan: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenPro: () -> Unit,
+    /** Opens the Pro screen from an automatic prompt; the argument is the `auto_<trigger>` value. */
+    onOpenAutoPro: (String) -> Unit,
     viewModel: RecipeListViewModel = hiltViewModel(),
+    promptViewModel: ProPromptViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val activePrompt by promptViewModel.active.collectAsStateWithLifecycle()
+    val proPrice by promptViewModel.price.collectAsStateWithLifecycle()
+    val openFromPrompt = { promptViewModel.onCtaTap()?.let { onOpenAutoPro(it.proScreenTrigger) } }
     var showAddSheet by rememberSaveable { mutableStateOf(false) }
     var showCategories by rememberSaveable { mutableStateOf(false) }
 
@@ -189,7 +198,20 @@ fun RecipeListScreen(
                     onImport = { viewModel.onAddAction(AddAction.IMPORT_FILE) },
                 )
             } else {
-                RecipeGrid(state, viewModel, onOpenRecipe, onOpenPro, onOpenSettings, onSeeAll = { showCategories = true })
+                RecipeGrid(
+                    state,
+                    viewModel,
+                    onOpenRecipe,
+                    onOpenPro,
+                    onOpenSettings,
+                    onSeeAll = { showCategories = true },
+                    // Never alongside the limit or backup banners.
+                    proCard = if (activePrompt == ProPromptTrigger.RECIPES_MILESTONE && !state.atLimit && !state.showBackupNudge) {
+                        ProCardUi(proPrice, onSeePro = { openFromPrompt() }, onNotNow = { promptViewModel.onDismissed(ProPromptDismissMethod.NOT_NOW) })
+                    } else {
+                        null
+                    },
+                )
             }
 
             BottomFade(height = 140.dp, modifier = Modifier.align(Alignment.BottomCenter))
@@ -220,6 +242,13 @@ fun RecipeListScreen(
         }
     }
 
+    if (activePrompt == ProPromptTrigger.COOK_OR_SAVE_MILESTONE) {
+        ProPromptSheet(
+            price = proPrice,
+            onUnlock = { openFromPrompt() },
+            onDismiss = promptViewModel::onDismissed,
+        )
+    }
     if (showAddSheet) {
         AddRecipeSheet(
             onDismiss = { showAddSheet = false },
@@ -290,6 +319,7 @@ private fun RecipeGrid(
     onOpenPro: () -> Unit,
     onOpenSettings: () -> Unit,
     onSeeAll: () -> Unit,
+    proCard: ProCardUi?,
 ) {
     val full: LazyGridItemSpanScope.() -> GridItemSpan = { GridItemSpan(maxLineSpan) }
     LazyVerticalGrid(
@@ -322,6 +352,11 @@ private fun RecipeGrid(
         }
         if (state.showBackupNudge) {
             item(span = full) { BackupNudgeBanner(onBackUp = onOpenSettings, onDismiss = viewModel::dismissBackupNudge) }
+        }
+        if (proCard != null) {
+            item(span = full, key = "pro-card") {
+                ProInlineCard(price = proCard.price, onSeePro = proCard.onSeePro, onNotNow = proCard.onNotNow)
+            }
         }
         if (state.categories.isNotEmpty()) {
             item(span = full) {

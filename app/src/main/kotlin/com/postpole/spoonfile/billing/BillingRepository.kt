@@ -58,6 +58,10 @@ class BillingRepository(
     @Volatile
     private var activeFlow: BillingProduct? = null
 
+    /** Trigger of the Pro purchase flow in progress, carried onto the `purchase` event. */
+    @Volatile
+    private var proPurchaseTrigger: String? = null
+
     /** Pro entitlement. Gates every Pro feature (recipe cap, whole-file import); never affected by `remove_ads`. */
     val isPro: StateFlow<Boolean> = dataStore.data
         .map { it[IS_PRO] ?: false }
@@ -183,14 +187,22 @@ class BillingRepository(
         if (started) scope.launch { refresh() }
     }
 
-    fun launchPurchase(activity: Activity, product: BillingProduct = BillingProduct.PRO): Boolean {
+    /**
+     * [trigger] is why the Pro screen was opened (e.g. `auto_recipes_milestone`); it is added to `purchase_started`
+     * and to the `purchase` event if this flow completes. Null for the manual / hard-gate entries.
+     */
+    fun launchPurchase(activity: Activity, product: BillingProduct = BillingProduct.PRO, trigger: String? = null): Boolean {
         val launched = gateway.launchPurchase(activity, product)
         if (launched) {
             activeFlow = product
+            if (product == BillingProduct.PRO) proPurchaseTrigger = trigger
             when (product) {
                 BillingProduct.PRO -> analytics.logEvent(
                     AnalyticsEvents.PURCHASE_STARTED,
-                    mapOf(AnalyticsParams.PRODUCT_ID to proProductId),
+                    buildMap {
+                        put(AnalyticsParams.PRODUCT_ID, proProductId)
+                        trigger?.let { put(AnalyticsParams.TRIGGER, it) }
+                    },
                 )
                 BillingProduct.REMOVE_ADS ->
                     analytics.logEvent(AnalyticsEvents.REMOVE_ADS_PURCHASE_START, removeAdsParams())
@@ -290,7 +302,9 @@ class BillingRepository(
                         put(AnalyticsParams.VALUE, product.priceMicros / 1_000_000.0)
                         put(AnalyticsParams.CURRENCY, product.currencyCode)
                     }
+                    proPurchaseTrigger?.let { put(AnalyticsParams.TRIGGER, it) }
                 }
+                proPurchaseTrigger = null
                 analytics.logEvent(AnalyticsEvents.PURCHASE, params)
             }
             Source.REFRESH ->

@@ -12,6 +12,8 @@ import com.postpole.spoonfile.data.CategoryWithCount
 import com.postpole.spoonfile.data.Limits
 import com.postpole.spoonfile.data.RecipeEntity
 import com.postpole.spoonfile.data.RecipeRepository
+import com.postpole.spoonfile.pro.NoOpProPromptSignals
+import com.postpole.spoonfile.pro.ProPromptSignals
 import com.postpole.spoonfile.data.RecipeSort
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -67,6 +69,7 @@ class RecipeListViewModel @Inject constructor(
     categoryDao: CategoryDao,
     billing: BillingRepository,
     private val settings: SettingsRepository,
+    private val proPrompts: ProPromptSignals = NoOpProPromptSignals,
 ) : ViewModel() {
 
     private data class Filters(
@@ -140,12 +143,18 @@ class RecipeListViewModel @Inject constructor(
 
     /** FAB / counter-free entry: opens the Add sheet, or Pro when the free cap is reached. */
     fun onAddRequested() {
-        _events.trySend(if (state.value.canAdd) RecipeListEvent.ShowAddSheet else RecipeListEvent.OpenPro)
+        if (state.value.canAdd) _events.trySend(RecipeListEvent.ShowAddSheet) else openProFromCap()
     }
 
     /** A row in the Add sheet (or an empty-state button). Anything that creates a recipe respects the cap. */
     fun onAddAction(action: AddAction) {
-        _events.trySend(if (state.value.canAdd) RecipeListEvent.Start(action) else RecipeListEvent.OpenPro)
+        if (state.value.canAdd) _events.trySend(RecipeListEvent.Start(action)) else openProFromCap()
+    }
+
+    /** The free cap is a hard gate: it also starts the 48 h quiet period for automatic Pro prompts. */
+    private fun openProFromCap() {
+        viewModelScope.launch { proPrompts.recordHardGate() }
+        _events.trySend(RecipeListEvent.OpenPro)
     }
 
     private inline fun MutableStateFlow<Filters>.update(transform: (Filters) -> Filters) {

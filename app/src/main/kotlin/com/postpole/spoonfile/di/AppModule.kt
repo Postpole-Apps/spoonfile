@@ -16,6 +16,10 @@ import com.postpole.spoonfile.importer.ocr.ScanCache
 import com.postpole.spoonfile.importer.ocr.MlKitOcrEngine
 import com.postpole.spoonfile.importer.ocr.OcrEngine
 import com.postpole.spoonfile.importer.ocr.PagePhotoReader
+import com.postpole.spoonfile.pro.ProPromptConfigSource
+import com.postpole.spoonfile.pro.ProPromptRepository
+import com.postpole.spoonfile.pro.ProPromptSignals
+import com.postpole.spoonfile.pro.createProPromptConfig
 import com.postpole.spoonfile.review.ReviewPolicy
 import com.postpole.spoonfile.review.ReviewPrompter
 import com.postpole.spoonfile.billing.BillingGateway
@@ -90,6 +94,13 @@ object AppModule {
     @Provides
     @Singleton
     fun provideAdsConfig(@ApplicationContext context: Context): AdsConfigSource = createAdsConfig(context)
+
+    @Provides
+    @Singleton
+    fun provideProPromptConfig(@ApplicationContext context: Context): ProPromptConfigSource = createProPromptConfig(context)
+
+    @Provides
+    fun provideProPromptSignals(repository: ProPromptRepository): ProPromptSignals = repository
 
     @Provides
     fun provideReviewPrompter(policy: ReviewPolicy): ReviewPrompter = policy
