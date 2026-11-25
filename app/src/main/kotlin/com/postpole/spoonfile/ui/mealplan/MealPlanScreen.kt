@@ -51,6 +51,7 @@ import com.postpole.spoonfile.ui.theme.SpoonfilePolygons
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import kotlinx.coroutines.flow.collectLatest
 
 /**
  * The weekly meal plan (Pro). Free users are sent to the Pro screen via [onOpenPro]; nothing is shown or
@@ -70,7 +71,7 @@ fun MealPlanScreen(
     val emptyMessage = stringResource(R.string.meal_plan_nothing_to_shop)
     val context = LocalContext.current
     LaunchedEffect(viewModel) {
-        viewModel.events.collect { event ->
+        viewModel.events.collectLatest { event ->
             when (event) {
                 MealPlanEvent.OpenPro -> onOpenPro()
                 is MealPlanEvent.AddedToShopping -> snackbar.showLatestSnackbar(

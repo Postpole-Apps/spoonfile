@@ -64,6 +64,8 @@ import com.postpole.spoonfile.data.ThemeMode
 import com.postpole.spoonfile.exporter.PaprikaArchiveWriter
 import com.postpole.spoonfile.ui.showLatestSnackbar
 import java.text.DateFormat
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.util.Date
 
@@ -153,7 +155,7 @@ fun SettingsScreen(
 
     val messages = rememberEventMessages()
     LaunchedEffect(viewModel) {
-        viewModel.events.collect { snackbarHostState.showLatestSnackbar(messages(it)) }
+        viewModel.events.collectLatest { snackbarHostState.showLatestSnackbar(messages(it)) }
     }
 
     Scaffold(
@@ -172,13 +174,17 @@ fun SettingsScreen(
                 LaunchedEffect(Unit) { viewModel.onRemoveAdsPaywallViewed() }
                 // The price only ever comes from Play; until it loads, no price is shown.
                 val unavailableMessage = stringResource(R.string.settings_remove_ads_unavailable_snackbar)
+                var unavailableJob by remember { mutableStateOf<Job?>(null) }
                 RemoveAdsRow(
                     price = removeAdsPrice,
                     unavailable = removeAdsUnavailable,
                     pending = removeAdsPending,
                     onBuy = { activity?.let(viewModel::buyRemoveAds) },
                     onRetry = viewModel::retryProducts,
-                    onUnavailableTap = { scope.launch { snackbarHostState.showLatestSnackbar(unavailableMessage) } },
+                    onUnavailableTap = {
+                        unavailableJob?.cancel()
+                        unavailableJob = scope.launch { snackbarHostState.showLatestSnackbar(unavailableMessage) }
+                    },
                 )
                 HorizontalDivider()
             }
