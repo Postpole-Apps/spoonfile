@@ -74,6 +74,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.ui.semantics.Role
 import com.postpole.spoonfile.domain.QuantityScaler
+import com.postpole.spoonfile.ui.showLatestSnackbar
 import com.postpole.spoonfile.ui.theme.ExtendedFabShape
 import com.postpole.spoonfile.ui.theme.RecipePhotoShape
 import com.postpole.spoonfile.ui.theme.SpoonfilePolygons
@@ -229,7 +230,7 @@ fun RecipeDetailScreen(
                 viewModel.addToShopping(ids) { count ->
                     if (count > 0) {
                         scope.launch {
-                            val result = snackbar.showSnackbar(
+                            val result = snackbar.showLatestSnackbar(
                                 context.resources.getQuantityString(R.plurals.shopping_added, count, count),
                                 actionLabel = viewList,
                             )

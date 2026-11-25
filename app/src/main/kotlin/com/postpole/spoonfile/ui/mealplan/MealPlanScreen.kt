@@ -46,6 +46,7 @@ import com.postpole.spoonfile.R
 import com.postpole.spoonfile.data.MealPlanRow
 import com.postpole.spoonfile.data.RecipeEntity
 import com.postpole.spoonfile.ui.recipe.RecipePhoto
+import com.postpole.spoonfile.ui.showLatestSnackbar
 import com.postpole.spoonfile.ui.theme.SpoonfilePolygons
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -72,7 +73,7 @@ fun MealPlanScreen(
         viewModel.events.collect { event ->
             when (event) {
                 MealPlanEvent.OpenPro -> onOpenPro()
-                is MealPlanEvent.AddedToShopping -> snackbar.showSnackbar(
+                is MealPlanEvent.AddedToShopping -> snackbar.showLatestSnackbar(
                     if (event.count == 0) emptyMessage else context.resources.getQuantityString(R.plurals.meal_plan_shopping_added, event.count, event.count),
                 )
             }

@@ -62,6 +62,7 @@ import com.postpole.spoonfile.R
 import com.postpole.spoonfile.ads.rememberAdsController
 import com.postpole.spoonfile.data.ThemeMode
 import com.postpole.spoonfile.exporter.PaprikaArchiveWriter
+import com.postpole.spoonfile.ui.showLatestSnackbar
 import java.text.DateFormat
 import kotlinx.coroutines.launch
 import java.util.Date
@@ -152,7 +153,7 @@ fun SettingsScreen(
 
     val messages = rememberEventMessages()
     LaunchedEffect(viewModel) {
-        viewModel.events.collect { snackbarHostState.showSnackbar(messages(it)) }
+        viewModel.events.collect { snackbarHostState.showLatestSnackbar(messages(it)) }
     }
 
     Scaffold(
@@ -177,7 +178,7 @@ fun SettingsScreen(
                     pending = removeAdsPending,
                     onBuy = { activity?.let(viewModel::buyRemoveAds) },
                     onRetry = viewModel::retryProducts,
-                    onUnavailableTap = { scope.launch { snackbarHostState.showSnackbar(unavailableMessage) } },
+                    onUnavailableTap = { scope.launch { snackbarHostState.showLatestSnackbar(unavailableMessage) } },
                 )
                 HorizontalDivider()
             }
