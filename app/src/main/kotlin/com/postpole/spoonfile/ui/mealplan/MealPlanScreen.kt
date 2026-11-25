@@ -73,7 +73,7 @@ fun MealPlanScreen(
             when (event) {
                 MealPlanEvent.OpenPro -> onOpenPro()
                 is MealPlanEvent.AddedToShopping -> snackbar.showSnackbar(
-                    if (event.count == 0) emptyMessage else context.getString(R.string.meal_plan_shopping_added, event.count),
+                    if (event.count == 0) emptyMessage else context.resources.getQuantityString(R.plurals.meal_plan_shopping_added, event.count, event.count),
                 )
             }
         }

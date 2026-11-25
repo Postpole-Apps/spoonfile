@@ -51,7 +51,11 @@
     <string name="meal_plan_remove">Remover</string>
     <string name="meal_plan_pick_title">Escolha uma receita</string>
     <string name="meal_plan_pick_empty">Nenhuma receita correspondente.</string>
-    <string name="meal_plan_shopping_added">%1$d itens adicionados à sua lista de compras</string>
+    <plurals name="meal_plan_shopping_added">
+        <item quantity="one">%d item adicionado à sua lista de compras</item>
+        <item quantity="many">%d itens adicionados à sua lista de compras</item>
+        <item quantity="other">%d itens adicionados à sua lista de compras</item>
+    </plurals>
     <string name="meal_plan_nothing_to_shop">Não há ingredientes para adicionar.</string>
     <string name="shopping_other">Outros</string>
     <string name="shopping_share">Compartilhar lista</string>
