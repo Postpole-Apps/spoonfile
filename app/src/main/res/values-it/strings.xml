@@ -238,6 +238,7 @@
     <string name="pro_restore_nothing">Niente da ripristinare</string>
     <string name="pro_restore_failed">Impossibile ripristinare gli acquisti. Riprova.</string>
     <string name="pro_pending">Il tuo acquisto è in sospeso. Pro si sbloccherà al completamento del pagamento.</string>
+    <string name="pro_owned_headline">Spoonfile Pro è attivo</string>
     <string name="pro_active">Pro attivo</string>
     <string name="pro_locked">Questa funzione fa parte di Pro.</string>
     <string name="upgrade_to_pro">Passa a Pro</string>
@@ -251,6 +252,7 @@
     <string name="settings_remove_ads_hint">Nasconde solo la pubblicità. Pro elimina anche il limite di ricette e aggiunge l\'importazione di file completi.</string>
     <string name="settings_remove_ads_pending">Il tuo acquisto è in sospeso. La pubblicità scomparirà al completamento del pagamento.</string>
     <string name="settings_remove_ads_unavailable">Non disponibile al momento. Tocca per riprovare.</string>
+    <string name="settings_remove_ads_unavailable_snackbar">Rimuovi la pubblicità non è disponibile al momento. Nuovo tentativo in corso…</string>
     <string name="settings_section_recipes">Ricette</string>
     <string name="settings_categories">Categorie</string>
     <string name="settings_categories_hint">Crea, rinomina, riordina ed elimina</string>

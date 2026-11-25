@@ -238,6 +238,7 @@
     <string name="pro_restore_nothing">Nada para restaurar</string>
     <string name="pro_restore_failed">Não foi possível restaurar as compras. Tente novamente.</string>
     <string name="pro_pending">Sua compra está pendente. O Pro será desbloqueado quando o pagamento for concluído.</string>
+    <string name="pro_owned_headline">O Spoonfile Pro está ativo</string>
     <string name="pro_active">Pro ativo</string>
     <string name="pro_locked">Este recurso faz parte do Pro.</string>
     <string name="upgrade_to_pro">Fazer upgrade para o Pro</string>
@@ -251,6 +252,7 @@
     <string name="settings_remove_ads_hint">Apenas oculta os anúncios. O Pro também remove o limite de receitas e adiciona a importação de arquivos completos.</string>
     <string name="settings_remove_ads_pending">Sua compra está pendente. Os anúncios desaparecerão quando o pagamento for concluído.</string>
     <string name="settings_remove_ads_unavailable">Indisponível no momento. Toque para tentar novamente.</string>
+    <string name="settings_remove_ads_unavailable_snackbar">Remover anúncios não está disponível no momento. Tentando novamente…</string>
     <string name="settings_section_recipes">Receitas</string>
     <string name="settings_categories">Categorias</string>
     <string name="settings_categories_hint">Criar, renomear, reordenar e excluir</string>

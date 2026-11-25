@@ -137,17 +137,7 @@ fun ProScreen(onBack: () -> Unit, viewModel: ProViewModel = hiltViewModel()) {
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
             }
-            Text(
-                stringResource(R.string.pro_features_title),
-                style = MaterialTheme.typography.headlineMedium,
-                textAlign = TextAlign.Center,
-            )
-            Text(
-                stringResource(R.string.pro_pay_once),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary,
-                textAlign = TextAlign.Center,
-            )
+            ProHeadline(isPro)
             // Only features that ship in this release.
             FeatureCard(stringResource(R.string.pro_feature_unlimited), stringResource(R.string.pro_feature_unlimited_hint))
             FeatureCard(stringResource(R.string.pro_feature_import), stringResource(R.string.pro_feature_import_hint))
@@ -168,6 +158,26 @@ fun ProScreen(onBack: () -> Unit, viewModel: ProViewModel = hiltViewModel()) {
                 }
             }
             Spacer(Modifier.height(8.dp))
+        }
+    }
+}
+
+/** Headline of the Pro screen. When Pro is owned it says so and the unlock / pay-once wording is hidden. */
+@Composable
+internal fun ProHeadline(isPro: Boolean) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Text(
+            stringResource(if (isPro) R.string.pro_owned_headline else R.string.pro_features_title),
+            style = MaterialTheme.typography.headlineMedium,
+            textAlign = TextAlign.Center,
+        )
+        if (!isPro) {
+            Text(
+                stringResource(R.string.pro_pay_once),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
+                textAlign = TextAlign.Center,
+            )
         }
     }
 }
