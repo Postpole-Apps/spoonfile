@@ -47,6 +47,8 @@
     <string name="meal_plan_day_empty">No hay recetas planificadas para este día.</string>
     <string name="meal_plan_add_recipe">Añadir una receta</string>
     <string name="meal_plan_add_day_to_shopping">Añadir los ingredientes de este día a la lista de la compra</string>
+    <string name="meal_plan_add_week_to_shopping">Añadir los ingredientes de esta semana a la lista de compras</string>
+    <string name="meal_plan_add_week_to_shopping_cd">Añadir a la lista de compras los ingredientes de cada comida planificada esta semana</string>
     <string name="meal_plan_add_to_shopping">Añadir a la lista de la compra</string>
     <string name="meal_plan_remove">Quitar</string>
     <string name="meal_plan_pick_title">Elegir una receta</string>
