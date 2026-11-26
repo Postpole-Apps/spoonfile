@@ -215,6 +215,102 @@ class MealPlanViewModelTest {
         assertEquals(1, analytics.events.count { it.first == AnalyticsEvents.MEAL_PLAN_SHOP })
     }
 
+    private suspend fun planEntry(date: LocalDate, id: Long) =
+        db.mealPlanDao().insert(com.postpole.spoonfile.data.MealPlanEntryEntity(date = date.toString(), recipeId = id, createdAt = 1))
+
+    @Test
+    fun repeatLastWeek_copiesOntoMatchingDays_skipsDuplicates_andKeepsThisWeek() = runTest {
+        makePro()
+        val other = recipes.upsertWithChildren(RecipeEntity(uid = "u2", title = "Stew", createdAt = 1, updatedAt = 1), emptyList(), emptyList(), emptyList())
+        val lastMonday = monday.minusWeeks(1)
+        planEntry(lastMonday, recipeId)
+        planEntry(lastMonday, other)
+        planEntry(lastMonday.plusDays(3), recipeId)
+        planEntry(monday, recipeId) // already planned this week: must be skipped, not duplicated
+        newVm()
+        awaitState { it.isPro }
+
+        vm.repeatLastWeek()
+
+        assertEquals(MealPlanEvent.Repeated(2), vm.events.first())
+        val state = awaitState { s -> s.days.sumOf { it.entries.size } == 3 }
+        assertEquals(listOf(recipeId, other), state.days[0].entries.map { it.entry.recipeId })
+        assertEquals(listOf(recipeId), state.days[3].entries.map { it.entry.recipeId })
+        val adds = analytics.events.filter { it.first == AnalyticsEvents.MEAL_PLAN_ADD }
+        assertEquals(1, adds.size)
+        assertEquals(2, adds.single().second["item_count"])
+    }
+
+    @Test
+    fun repeatLastWeek_emptyLastWeek_writesNothing() = runTest {
+        makePro()
+        newVm()
+        awaitState { it.isPro }
+
+        vm.repeatLastWeek()
+
+        assertEquals(MealPlanEvent.RepeatEmpty, vm.events.first())
+        assertEquals(0, db.mealPlanDao().getAll().size)
+        assertTrue(analytics.events.none { it.first == AnalyticsEvents.MEAL_PLAN_ADD })
+    }
+
+    @Test
+    fun repeatLastWeek_deletedRecipesAreOmitted() = runTest {
+        makePro()
+        val gone = recipes.upsertWithChildren(RecipeEntity(uid = "u3", title = "Gone", createdAt = 1, updatedAt = 1), emptyList(), emptyList(), emptyList())
+        planEntry(monday.minusDays(7), gone)
+        planEntry(monday.minusDays(7), recipeId)
+        db.recipeDao().delete(gone) // ON DELETE CASCADE removes the plan entry
+        newVm()
+        awaitState { it.isPro }
+
+        vm.repeatLastWeek()
+
+        assertEquals(MealPlanEvent.Repeated(1), vm.events.first())
+        assertEquals(listOf(recipeId), db.mealPlanDao().getAll().filter { it.date == monday.toString() }.map { it.recipeId })
+    }
+
+    @Test
+    fun repeatLastWeek_andShare_requirePro() = runTest {
+        planEntry(monday.minusDays(7), recipeId)
+        newVm()
+        awaitState { it.entitlementKnown }
+
+        vm.repeatLastWeek()
+        vm.shareWeek()
+
+        assertEquals(1, db.mealPlanDao().getAll().size)
+        assertEquals(MealPlanEvent.OpenPro, vm.events.first())
+        assertTrue(analytics.events.none { it.first == AnalyticsEvents.MEAL_PLAN_ADD })
+    }
+
+    @Test
+    fun shareWeek_asPro_sendsShareEvent() = runTest {
+        makePro()
+        newVm()
+        awaitState { it.isPro }
+        vm.shareWeek()
+        assertEquals(MealPlanEvent.ShareWeek, vm.events.first())
+    }
+
+    @Test
+    fun shareText_emptyWeek_isHeadingAndEmptyLine() {
+        val text = formatMealPlanShare("Plan", listOf("Monday" to emptyList(), "Tuesday" to emptyList()), "Nothing") { d, t -> "$d: $t" }
+        assertEquals("Plan\nNothing", text)
+    }
+
+    @Test
+    fun shareText_oneRecipePerDay_omitsEmptyDays() {
+        val days = listOf("Monday" to listOf("Soup"), "Tuesday" to emptyList(), "Wednesday" to listOf("Stew"))
+        assertEquals("Plan\nMonday: Soup\nWednesday: Stew", formatMealPlanShare("Plan", days, "Nothing") { d, t -> "$d: $t" })
+    }
+
+    @Test
+    fun shareText_severalRecipesOnOneDay_areJoinedInOrder() {
+        val days = listOf("Monday" to listOf("Soup", "Stew", "Pie"))
+        assertEquals("Plan\nMonday: Soup, Stew, Pie", formatMealPlanShare("Plan", days, "Nothing") { d, t -> "$d: $t" })
+    }
+
     @Test
     fun weekStart_followsTheFirstDayOfTheWeek() {
         val wednesday = LocalDate.of(2026, 11, 25)

@@ -55,6 +55,17 @@
         <item quantity="other">Added %1$d items to your shopping list</item>
     </plurals>
     <string name="meal_plan_nothing_to_shop">There are no ingredients to add.</string>
+    <string name="meal_plan_repeat_week">Copy last week</string>
+    <string name="meal_plan_repeat_week_cd">Copy last week\'s meals into this week</string>
+    <string name="meal_plan_repeat_empty">Last week has no meals to copy</string>
+    <plurals name="meal_plan_repeated">
+        <item quantity="one">Copied %1$d meal from last week</item>
+        <item quantity="other">Copied %1$d meals from last week</item>
+    </plurals>
+    <string name="meal_plan_share">Share week</string>
+    <string name="meal_plan_share_heading">Meal plan · %1$s – %2$s</string>
+    <string name="meal_plan_share_empty">No recipes planned this week.</string>
+    <string name="meal_plan_share_day">%1$s: %2$s</string>
     <string name="shopping_other">Other</string>
     <string name="shopping_share">Share list</string>
     <string name="shopping_clear_checked">Clear checked</string>
