@@ -5,19 +5,33 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.postpole.spoonfile.analytics.Analytics
+import com.postpole.spoonfile.analytics.AnalyticsEvents
+import com.postpole.spoonfile.billing.BillingRepository
+import com.postpole.spoonfile.data.MealPlanRepository
 import com.postpole.spoonfile.data.RecipeRepository
 import com.postpole.spoonfile.pro.NoOpProPromptSignals
 import com.postpole.spoonfile.pro.ProPromptSignals
 import com.postpole.spoonfile.data.RecipeWithDetails
 import com.postpole.spoonfile.data.ShoppingRepository
 import com.postpole.spoonfile.domain.QuantityScaler
+import com.postpole.spoonfile.ui.mealplan.weekStartOf
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.temporal.WeekFields
+import java.util.Locale
 import javax.inject.Inject
 
 data class RecipeDetailUiState(
@@ -34,14 +48,35 @@ data class RecipeDetailUiState(
         }
 }
 
+sealed interface RecipeDetailEvent {
+    /** Adding to the meal plan is a Pro feature and the user is not Pro. */
+    data object OpenPro : RecipeDetailEvent
+
+    /** The recipe was planned on [date]. */
+    data class AddedToMealPlan(val date: LocalDate) : RecipeDetailEvent
+
+    /** The recipe is already planned on that day, so nothing was written. */
+    data object AlreadyInMealPlan : RecipeDetailEvent
+}
+
 @HiltViewModel
 class RecipeDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val repository: RecipeRepository,
     private val shopping: ShoppingRepository,
+    private val mealPlan: MealPlanRepository,
+    private val billing: BillingRepository,
+    private val analytics: Analytics,
     private val proPrompts: ProPromptSignals = NoOpProPromptSignals,
 ) : ViewModel() {
     val recipeId: Long = savedStateHandle.get<Long>("id") ?: 0L
+
+    /** Overridable in tests. */
+    internal var today: () -> LocalDate = { LocalDate.now() }
+    internal var firstDayOfWeek: DayOfWeek = WeekFields.of(Locale.getDefault()).firstDayOfWeek
+
+    private val _events = Channel<RecipeDetailEvent>(Channel.BUFFERED)
+    val events: Flow<RecipeDetailEvent> = _events.receiveAsFlow()
 
     private val servingsOverride = MutableStateFlow<Double?>(null)
 
@@ -79,6 +114,33 @@ class RecipeDetailViewModel @Inject constructor(
             .filter { !it.isHeader && it.id in ingredientIds }
             .map { QuantityScaler.scale(it.text, scale) }
         viewModelScope.launch { onAdded(shopping.addRecipeLines(recipeId, lines)) }
+    }
+
+    /** The 7 days of the week containing today, using the same week start as the meal plan. */
+    fun weekDays(): List<LocalDate> {
+        val start = weekStartOf(today(), firstDayOfWeek)
+        return List(7) { start.plusDays(it.toLong()) }
+    }
+
+    /**
+     * Plans this recipe on [date]. Waits for the entitlement to be known; a free user writes nothing and is
+     * sent to Pro. A recipe already planned on [date] is not added twice.
+     */
+    fun addToMealPlan(date: LocalDate) {
+        viewModelScope.launch {
+            if (!billing.isProOrUnknown.filterNotNull().first()) {
+                proPrompts.recordHardGate()
+                _events.send(RecipeDetailEvent.OpenPro)
+                return@launch
+            }
+            if (mealPlan.observeRange(date, date).first().any { it.entry.recipeId == recipeId }) {
+                _events.send(RecipeDetailEvent.AlreadyInMealPlan)
+                return@launch
+            }
+            mealPlan.add(date, recipeId)
+            analytics.logEvent(AnalyticsEvents.MEAL_PLAN_ADD)
+            _events.send(RecipeDetailEvent.AddedToMealPlan(date))
+        }
     }
 
     /** Cook mode was finished with "Done" on the last step. */

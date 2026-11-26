@@ -138,6 +138,8 @@ fun AppNavHost(
                 onEdit = { navController.navigate(Routes.edit(it)) },
                 onCook = { navController.navigate(Routes.cook(it)) },
                 onOpenShopping = { navController.navigate(Routes.SHOPPING) },
+                onOpenMealPlan = { navController.navigate(Routes.MEAL_PLAN) },
+                onOpenPro = { openPro() },
             )
         }
         composable(Routes.COOK, arguments = idArg) {

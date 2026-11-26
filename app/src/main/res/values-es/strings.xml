@@ -372,4 +372,10 @@
     <string name="pro_prompt_see_pro">Ver Pro</string>
     <string name="pro_prompt_not_now">Ahora no</string>
     <string name="pro_prompt_close_cd">Cerrar sugerencia de Pro</string>
+    <string name="detail_add_to_meal_plan">Añadir al plan de comidas</string>
+    <string name="detail_add_to_meal_plan_cd">Añadir esta receta al plan de comidas de esta semana</string>
+    <string name="detail_meal_plan_pick_day">Elige un día de esta semana</string>
+    <string name="detail_meal_plan_added">Añadido a %1$s</string>
+    <string name="detail_meal_plan_already">Esta receta ya está planificada ese día</string>
+    <string name="detail_meal_plan_view">Ver plan</string>
 </resources>
