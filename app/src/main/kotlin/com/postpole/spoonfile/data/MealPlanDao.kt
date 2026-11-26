@@ -23,6 +23,10 @@ interface MealPlanDao {
     )
     fun observeRange(from: String, to: String): Flow<List<MealPlanRow>>
 
+    /** Raw entries from [from] to [to] inclusive, in day / position order. */
+    @Query("SELECT * FROM meal_plan_entries WHERE date >= :from AND date <= :to ORDER BY date, position, id")
+    suspend fun getRange(from: String, to: String): List<MealPlanEntryEntity>
+
     @Query("SELECT COALESCE(MAX(position), -1) FROM meal_plan_entries WHERE date = :date")
     suspend fun maxPosition(date: String): Int
 

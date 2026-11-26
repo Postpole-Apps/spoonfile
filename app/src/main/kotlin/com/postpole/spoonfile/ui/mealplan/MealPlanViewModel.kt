@@ -56,6 +56,15 @@ sealed interface MealPlanEvent {
 
     /** Ingredients were added to the shopping list ([count] lines; 0 when there was nothing to add). */
     data class AddedToShopping(val count: Int) : MealPlanEvent
+
+    /** Last week's meals were copied ([count] new entries; may be 0 if all were already planned). */
+    data class Repeated(val count: Int) : MealPlanEvent
+
+    /** Last week has no meals, so nothing was written. */
+    data object RepeatEmpty : MealPlanEvent
+
+    /** The user asked to share the visible week as text (Pro only). */
+    data object ShareWeek : MealPlanEvent
 }
 
 /** First day of the week containing [date] under [firstDay]. */
@@ -166,6 +175,29 @@ class MealPlanViewModel @Inject constructor(
             plan.add(date, recipeId)
             analytics.logEvent(AnalyticsEvents.MEAL_PLAN_ADD)
         }
+    }
+
+    /** Copies last week's meals onto the visible week, skipping recipes already planned on that day. */
+    fun repeatLastWeek() {
+        if (!requirePro()) return
+        viewModelScope.launch {
+            val start = weekStart.value
+            val result = plan.copyWeek(start.minusWeeks(1), start)
+            if (result.sourceCount == 0) {
+                _events.send(MealPlanEvent.RepeatEmpty)
+                return@launch
+            }
+            if (result.copied > 0) {
+                analytics.logEvent(AnalyticsEvents.MEAL_PLAN_ADD, mapOf(AnalyticsParams.ITEM_COUNT to result.copied))
+            }
+            _events.send(MealPlanEvent.Repeated(result.copied))
+        }
+    }
+
+    /** Asks the screen to open the share chooser for the visible week. Does nothing unless the user is Pro. */
+    fun shareWeek() {
+        if (!requirePro()) return
+        _events.trySend(MealPlanEvent.ShareWeek)
     }
 
     fun remove(entryId: Long) {

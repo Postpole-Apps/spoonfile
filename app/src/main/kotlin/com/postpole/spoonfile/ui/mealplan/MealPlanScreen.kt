@@ -1,6 +1,14 @@
 package com.postpole.spoonfile.ui.mealplan
 
+import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -70,9 +78,36 @@ fun MealPlanScreen(
     val snackbar = remember { SnackbarHostState() }
     val emptyMessage = stringResource(R.string.meal_plan_nothing_to_shop)
     val context = LocalContext.current
+    val shareTitle = stringResource(R.string.meal_plan_share)
+    val dateFormat = remember { DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM) }
+    val weekdayFormat = remember { DateTimeFormatter.ofPattern("EEEE") }
+    val currentState by rememberUpdatedState(state)
     LaunchedEffect(viewModel) {
         viewModel.events.collectLatest { event ->
             when (event) {
+                MealPlanEvent.ShareWeek -> {
+                    val week = currentState
+                    val text = formatMealPlanShare(
+                        heading = context.getString(
+                            R.string.meal_plan_share_heading,
+                            week.weekStart.format(dateFormat),
+                            week.weekStart.plusDays(6).format(dateFormat),
+                        ),
+                        days = week.days.map { day -> day.date.format(weekdayFormat) to day.entries.map { it.recipeTitle } },
+                        emptyLine = context.getString(R.string.meal_plan_share_empty),
+                        dayLine = { weekday, titles -> context.getString(R.string.meal_plan_share_day, weekday, titles) },
+                    )
+                    val send = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_SUBJECT, context.getString(R.string.nav_meal_plan))
+                        putExtra(Intent.EXTRA_TEXT, text)
+                    }
+                    context.startActivity(Intent.createChooser(send, shareTitle))
+                }
+                MealPlanEvent.RepeatEmpty -> snackbar.showLatestSnackbar(context.getString(R.string.meal_plan_repeat_empty))
+                is MealPlanEvent.Repeated -> snackbar.showLatestSnackbar(
+                    context.resources.getQuantityString(R.plurals.meal_plan_repeated, event.count, event.count),
+                )
                 MealPlanEvent.OpenPro -> onOpenPro()
                 is MealPlanEvent.AddedToShopping -> snackbar.showLatestSnackbar(
                     if (event.count == 0) emptyMessage else context.resources.getQuantityString(R.plurals.meal_plan_shopping_added, event.count, event.count),
@@ -91,6 +126,13 @@ fun MealPlanScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
+                actions = {
+                    if (state.isPro) {
+                        IconButton(onClick = viewModel::shareWeek) {
+                            Icon(Icons.Filled.Share, contentDescription = shareTitle)
+                        }
+                    }
+                },
             )
         },
     ) { padding ->
@@ -99,8 +141,6 @@ fun MealPlanScreen(
             Spacer(Modifier.padding(padding).fillMaxSize())
             return@Scaffold
         }
-        val dateFormat = remember { DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM) }
-        val weekdayFormat = remember { DateTimeFormatter.ofPattern("EEEE") }
         LazyColumn(
             Modifier.fillMaxSize().padding(padding),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
@@ -113,6 +153,7 @@ fun MealPlanScreen(
                     onPrevious = viewModel::previousWeek,
                     onNext = viewModel::nextWeek,
                     onThisWeek = viewModel::thisWeek,
+                    onRepeat = viewModel::repeatLastWeek,
                 )
             }
             items(state.days, key = { it.date.toString() }) { day ->
@@ -140,6 +181,7 @@ fun MealPlanScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun WeekHeader(
     start: LocalDate,
@@ -147,6 +189,7 @@ private fun WeekHeader(
     onPrevious: () -> Unit,
     onNext: () -> Unit,
     onThisWeek: () -> Unit,
+    onRepeat: () -> Unit,
 ) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = onPrevious) {
@@ -157,7 +200,18 @@ private fun WeekHeader(
                 stringResource(R.string.meal_plan_week_range, start.format(format), start.plusDays(6).format(format)),
                 style = MaterialTheme.typography.titleMedium,
             )
-            TextButton(onClick = onThisWeek) { Text(stringResource(R.string.meal_plan_this_week)) }
+            FlowRow(horizontalArrangement = Arrangement.Center, verticalArrangement = Arrangement.Center) {
+                TextButton(onClick = onThisWeek, modifier = Modifier.heightIn(min = 48.dp)) {
+                    Text(stringResource(R.string.meal_plan_this_week))
+                }
+                val repeatCd = stringResource(R.string.meal_plan_repeat_week_cd)
+                TextButton(
+                    onClick = onRepeat,
+                    modifier = Modifier.heightIn(min = 48.dp).semantics { contentDescription = repeatCd },
+                ) {
+                    Text(stringResource(R.string.meal_plan_repeat_week))
+                }
+            }
         }
         IconButton(onClick = onNext) {
             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = stringResource(R.string.meal_plan_next_week))

@@ -5,6 +5,9 @@ import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/** [sourceCount] entries existed in the source week; [copied] new ones were written. */
+data class CopyWeekResult(val sourceCount: Int, val copied: Int)
+
 @Singleton
 class MealPlanRepository @Inject constructor(
     private val dao: MealPlanDao,
@@ -21,6 +24,26 @@ class MealPlanRepository @Inject constructor(
         return dao.insert(
             MealPlanEntryEntity(date = key, recipeId = recipeId, position = dao.maxPosition(key) + 1, createdAt = now),
         )
+    }
+
+    /**
+     * Copies each entry of the 7 days starting at [fromStart] onto the matching day of the week starting at
+     * [toStart]. A recipe already planned on the destination day is skipped, and nothing is deleted.
+     */
+    suspend fun copyWeek(fromStart: LocalDate, toStart: LocalDate, now: Long = System.currentTimeMillis()): CopyWeekResult {
+        val source = dao.getRange(fromStart.toString(), fromStart.plusDays(6).toString())
+        var copied = 0
+        for (offset in 0L..6L) {
+            val sourceKey = fromStart.plusDays(offset).toString()
+            val destDate = toStart.plusDays(offset)
+            val planned = dao.getRange(destDate.toString(), destDate.toString()).mapTo(mutableSetOf()) { it.recipeId }
+            for (entry in source.filter { it.date == sourceKey }) {
+                if (!planned.add(entry.recipeId)) continue
+                add(destDate, entry.recipeId, now)
+                copied++
+            }
+        }
+        return CopyWeekResult(sourceCount = source.size, copied = copied)
     }
 
     suspend fun remove(entryId: Long) = dao.delete(entryId)
