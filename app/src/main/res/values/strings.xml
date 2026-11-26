@@ -365,4 +365,10 @@
     <string name="pro_prompt_see_pro">See Pro</string>
     <string name="pro_prompt_not_now">Not now</string>
     <string name="pro_prompt_close_cd">Close Pro suggestion</string>
+    <string name="detail_add_to_meal_plan">Add to meal plan</string>
+    <string name="detail_add_to_meal_plan_cd">Add this recipe to this week\'s meal plan</string>
+    <string name="detail_meal_plan_pick_day">Choose a day this week</string>
+    <string name="detail_meal_plan_added">Added to %1$s</string>
+    <string name="detail_meal_plan_already">This recipe is already planned on that day</string>
+    <string name="detail_meal_plan_view">View plan</string>
 </resources>

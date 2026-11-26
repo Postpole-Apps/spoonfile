@@ -1,7 +1,7 @@
 package com.postpole.spoonfile.ui.shopping
 
 import android.content.Context
-import androidx.lifecycle.SavedStateHandle
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.postpole.spoonfile.data.AppDatabase
@@ -10,7 +10,7 @@ import com.postpole.spoonfile.data.IngredientEntity
 import com.postpole.spoonfile.data.RecipeEntity
 import com.postpole.spoonfile.data.RecipeRepository
 import com.postpole.spoonfile.data.ShoppingRepository
-import com.postpole.spoonfile.ui.recipe.RecipeDetailViewModel
+import com.postpole.spoonfile.ui.recipe.detailViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -74,7 +74,13 @@ class ShoppingListViewModelTest {
         )
 
     private fun detailVm(recipeId: Long) =
-        RecipeDetailViewModel(SavedStateHandle(mapOf("id" to recipeId)), recipes, shopping)
+        detailViewModel(
+            recipeId,
+            db,
+            recipes,
+            PreferenceDataStoreFactory.create(scope = scope) { File(tmp.root, "d.preferences_pb") },
+            scope,
+        )
 
     private suspend fun awaitState(predicate: (ShoppingListUiState) -> Boolean): ShoppingListUiState =
         withContext(Dispatchers.Default) { withTimeout(10_000) { vm.state.first(predicate) } }

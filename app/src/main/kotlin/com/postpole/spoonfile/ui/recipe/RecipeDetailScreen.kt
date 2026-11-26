@@ -78,8 +78,17 @@ import com.postpole.spoonfile.ui.showLatestSnackbar
 import com.postpole.spoonfile.ui.theme.ExtendedFabShape
 import com.postpole.spoonfile.ui.theme.RecipePhotoShape
 import com.postpole.spoonfile.ui.theme.SpoonfilePolygons
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberUpdatedState
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.time.format.TextStyle
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -88,6 +97,8 @@ fun RecipeDetailScreen(
     onEdit: (Long) -> Unit,
     onCook: (Long) -> Unit,
     onOpenShopping: () -> Unit,
+    onOpenMealPlan: () -> Unit,
+    onOpenPro: () -> Unit,
     viewModel: RecipeDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -101,6 +112,26 @@ fun RecipeDetailScreen(
     var showAddToShopping by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
     val viewList = stringResource(R.string.shopping_view_list)
+    var showPickDay by rememberSaveable { mutableStateOf(false) }
+    val currentOnOpenPro by rememberUpdatedState(onOpenPro)
+    val currentOnOpenMealPlan by rememberUpdatedState(onOpenMealPlan)
+    LaunchedEffect(viewModel) {
+        viewModel.events.collectLatest { event ->
+            when (event) {
+                RecipeDetailEvent.OpenPro -> currentOnOpenPro()
+                RecipeDetailEvent.AlreadyInMealPlan ->
+                    snackbar.showLatestSnackbar(context.getString(R.string.detail_meal_plan_already))
+                is RecipeDetailEvent.AddedToMealPlan -> {
+                    val day = event.date.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())
+                    val result = snackbar.showLatestSnackbar(
+                        context.getString(R.string.detail_meal_plan_added, day),
+                        actionLabel = context.getString(R.string.detail_meal_plan_view),
+                    )
+                    if (result == SnackbarResult.ActionPerformed) currentOnOpenMealPlan()
+                }
+            }
+        }
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
@@ -145,6 +176,15 @@ fun RecipeDetailScreen(
                                 Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.detail_more))
                             }
                             DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                                val addToPlanCd = stringResource(R.string.detail_add_to_meal_plan_cd)
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.detail_add_to_meal_plan)) },
+                                    modifier = Modifier.semantics { contentDescription = addToPlanCd },
+                                    onClick = {
+                                        menu = false
+                                        showPickDay = true
+                                    },
+                                )
                                 DropdownMenuItem(
                                     text = { Text(stringResource(R.string.detail_delete)) },
                                     onClick = {
@@ -221,6 +261,17 @@ fun RecipeDetailScreen(
                 }) { Text(stringResource(R.string.delete)) }
             },
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
+    if (showPickDay && details != null) {
+        PickDayDialog(
+            days = remember { viewModel.weekDays() },
+            today = remember { viewModel.today() },
+            onPick = { date ->
+                showPickDay = false
+                viewModel.addToMealPlan(date)
+            },
+            onDismiss = { showPickDay = false },
         )
     }
     if (showAddToShopping && details != null) {
@@ -479,6 +530,44 @@ private fun AddToShoppingDialog(
                 Text(stringResource(R.string.shopping_add_confirm))
             }
         },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
+}
+
+/** The 7 days of this week; each row is at least 48 dp and the list scrolls at large font sizes. */
+@Composable
+private fun PickDayDialog(days: List<LocalDate>, today: LocalDate, onPick: (LocalDate) -> Unit, onDismiss: () -> Unit) {
+    val dateFormat = remember { DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM) }
+    val todayLabel = stringResource(R.string.meal_plan_today)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.detail_meal_plan_pick_day)) },
+        text = {
+            LazyColumn {
+                items(days, key = { it.toString() }) { date ->
+                    val weekday = date.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())
+                    val isToday = date == today
+                    val spoken = if (isToday) "$weekday, $todayLabel" else weekday
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp)
+                            .clickable(role = Role.Button) { onPick(date) }
+                            .semantics(mergeDescendants = true) { contentDescription = "$spoken, ${date.format(dateFormat)}" }
+                            .padding(vertical = 8.dp),
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Text(spoken, style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            date.format(dateFormat),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {},
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }
