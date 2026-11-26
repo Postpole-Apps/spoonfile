@@ -375,6 +375,12 @@
     <string name="pro_prompt_card_title">Wachsende Sammlung? Spoonfile Pro freischalten</string>
     <string name="pro_prompt_card_body">Speichere unbegrenzt viele Rezepte, plane deine Woche und importiere ganze Rezeptdateien. Einmal zahlen — %1$s.</string>
     <string name="pro_prompt_card_body_no_price">Speichere unbegrenzt viele Rezepte, plane deine Woche und importiere ganze Rezeptdateien. Einmal zahlen.</string>
+    <string name="pro_prompt_cap_near_title">Dein Rezeptkasten füllt sich</string>
+    <string name="pro_prompt_cap_near_body">Speichere ohne Limit mit Spoonfile Pro. Einmal zahlen — %1$s.</string>
+    <string name="pro_prompt_cap_near_body_no_price">Speichere ohne Limit mit Spoonfile Pro. Einmal zahlen.</string>
+    <string name="pro_prompt_imports_title">Rezepte importieren? Spoonfile Pro freischalten</string>
+    <string name="pro_prompt_imports_body">Importiere ganze Rezeptdateien auf einmal und speichere unbegrenzt viele Rezepte. Einmal zahlen — %1$s.</string>
+    <string name="pro_prompt_imports_body_no_price">Importiere ganze Rezeptdateien auf einmal und speichere unbegrenzt viele Rezepte. Einmal zahlen.</string>
     <string name="pro_prompt_see_pro">Pro ansehen</string>
     <string name="pro_prompt_not_now">Nicht jetzt</string>
     <string name="pro_prompt_close_cd">Pro-Hinweis schließen</string>

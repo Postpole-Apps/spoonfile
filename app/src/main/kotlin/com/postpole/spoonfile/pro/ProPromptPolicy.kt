@@ -5,6 +5,8 @@ enum class ProPromptSurface(val id: String) { CARD("card"), SHEET("sheet") }
 
 /** What caused an automatic Pro prompt. [id] is the GA4 `trigger` enum; the Pro screen gets `auto_<id>`. */
 enum class ProPromptTrigger(val id: String, val surface: ProPromptSurface) {
+    RECIPE_CAP_NEAR("recipe_cap_near", ProPromptSurface.CARD),
+    IMPORTS_3("imports_3", ProPromptSurface.CARD),
     RECIPES_MILESTONE("recipes_milestone", ProPromptSurface.CARD),
     COOK_OR_SAVE_MILESTONE("cook_or_save_milestone", ProPromptSurface.SHEET),
     ;
@@ -19,6 +21,8 @@ object ProPromptConfigKeys {
     const val MIN_SESSION = "pro_auto_prompt_min_session"
     const val RECIPE_COUNT = "pro_prompt_recipe_count"
     const val COOK_OR_IMPORT_COUNT = "pro_prompt_cook_or_import_count"
+    const val CAP_NEAR_COUNT = "pro_prompt_cap_near_count"
+    const val IMPORT_COUNT = "pro_prompt_import_count"
 }
 
 /** The Remote Config values behind the policy. Build from raw values with [of], which clamps to the allowed bounds. */
@@ -27,18 +31,33 @@ data class ProPromptConfig(
     val minSession: Int = DEFAULT_MIN_SESSION,
     val recipeCount: Int = DEFAULT_RECIPE_COUNT,
     val cookOrImportCount: Int = DEFAULT_COOK_OR_IMPORT_COUNT,
+    /** Saved recipes at which the "cap is near" card appears (55-72; never the 75 cap itself). */
+    val capNearCount: Int = DEFAULT_CAP_NEAR_COUNT,
+    /** Successful imports after which the imports card appears (2-10). */
+    val importCount: Int = DEFAULT_IMPORT_COUNT,
 ) {
     companion object {
         const val DEFAULT_MIN_SESSION = 3
         const val DEFAULT_RECIPE_COUNT = 15
         const val DEFAULT_COOK_OR_IMPORT_COUNT = 3
+        const val DEFAULT_CAP_NEAR_COUNT = 65
+        const val DEFAULT_IMPORT_COUNT = 3
         val DEFAULTS = ProPromptConfig()
 
-        fun of(enabled: Boolean, minSession: Long, recipeCount: Long, cookOrImportCount: Long) = ProPromptConfig(
+        fun of(
+            enabled: Boolean,
+            minSession: Long,
+            recipeCount: Long,
+            cookOrImportCount: Long,
+            capNearCount: Long = DEFAULT_CAP_NEAR_COUNT.toLong(),
+            importCount: Long = DEFAULT_IMPORT_COUNT.toLong(),
+        ) = ProPromptConfig(
             enabled = enabled,
             minSession = minSession.coerceIn(2L, Int.MAX_VALUE.toLong()).toInt(),
             recipeCount = recipeCount.coerceIn(10L, 40L).toInt(),
             cookOrImportCount = cookOrImportCount.coerceIn(2L, 10L).toInt(),
+            capNearCount = capNearCount.coerceIn(55L, 72L).toInt(),
+            importCount = importCount.coerceIn(2L, 10L).toInt(),
         )
     }
 
@@ -47,6 +66,8 @@ data class ProPromptConfig(
         ProPromptConfigKeys.MIN_SESSION to minSession.toLong(),
         ProPromptConfigKeys.RECIPE_COUNT to recipeCount.toLong(),
         ProPromptConfigKeys.COOK_OR_IMPORT_COUNT to cookOrImportCount.toLong(),
+        ProPromptConfigKeys.CAP_NEAR_COUNT to capNearCount.toLong(),
+        ProPromptConfigKeys.IMPORT_COUNT to importCount.toLong(),
     )
 }
 
@@ -62,6 +83,8 @@ data class ProPromptHistory(
     val lastHardGateAt: Long? = null,
     /** Cook-mode completions + recipe saves since the last sheet (a whole-file import counts once). */
     val engagedEvents: Int = 0,
+    /** Successful imports so far (a whole-file import counts once). */
+    val importCount: Int = 0,
 )
 
 /** The live situation the policy is asked about. */
@@ -95,7 +118,14 @@ object ProPromptPolicy {
     const val MIN_INSTALL_AGE_DAYS = 2
     const val MIN_CARD_SESSION = 2
 
-    /** The prompt to show now, or null. A sheet wins over a card (at most one per session either way). */
+    /** Card priority when several are eligible: cap near, then imports, then the recipes milestone. */
+    private val CARD_PRIORITY = listOf(
+        ProPromptTrigger.RECIPE_CAP_NEAR,
+        ProPromptTrigger.IMPORTS_3,
+        ProPromptTrigger.RECIPES_MILESTONE,
+    )
+
+    /** The prompt to show now, or null. A sheet wins over any card (at most one per session either way). */
     fun evaluate(config: ProPromptConfig, history: ProPromptHistory, ctx: ProPromptContext): ProPromptTrigger? {
         if (ctx.isPro || !config.enabled) return null
         if (ctx.sessionCount <= 1) return null
@@ -104,8 +134,7 @@ object ProPromptPolicy {
         // A clock that moved backwards counts as "too soon".
         if (gate != null && ctx.now - gate < HARD_GATE_QUIET_MS) return null
         if (sheetEligible(config, history, ctx)) return ProPromptTrigger.COOK_OR_SAVE_MILESTONE
-        if (cardEligible(config, history, ctx)) return ProPromptTrigger.RECIPES_MILESTONE
-        return null
+        return CARD_PRIORITY.firstOrNull { cardEligible(it, config, history, ctx) }
     }
 
     fun sheetEligible(config: ProPromptConfig, history: ProPromptHistory, ctx: ProPromptContext): Boolean {
@@ -117,8 +146,13 @@ object ProPromptPolicy {
         return history.engagedEvents >= config.cookOrImportCount
     }
 
-    fun cardEligible(config: ProPromptConfig, history: ProPromptHistory, ctx: ProPromptContext): Boolean {
-        val id = ProPromptTrigger.RECIPES_MILESTONE.id
+    fun cardEligible(
+        trigger: ProPromptTrigger,
+        config: ProPromptConfig,
+        history: ProPromptHistory,
+        ctx: ProPromptContext,
+    ): Boolean {
+        val id = trigger.id
         // Rest points only: never at app launch.
         if (!ctx.atRestPoint || ctx.sessionCount < MIN_CARD_SESSION) return false
         if (ctx.showBackupNudge || ctx.atLimit) return false
@@ -127,6 +161,11 @@ object ProPromptPolicy {
         if (last != null && ctx.now - last < CARD_INTERVAL_MS) return false
         val dismissed = history.cardDismissedAt[id]
         if (dismissed != null && ctx.now - dismissed < CARD_COOLDOWN_MS) return false
-        return ctx.recipeCount >= config.recipeCount
+        return when (trigger) {
+            ProPromptTrigger.RECIPE_CAP_NEAR -> ctx.recipeCount >= config.capNearCount
+            ProPromptTrigger.IMPORTS_3 -> history.importCount >= config.importCount
+            ProPromptTrigger.RECIPES_MILESTONE -> ctx.recipeCount >= config.recipeCount
+            ProPromptTrigger.COOK_OR_SAVE_MILESTONE -> false
+        }
     }
 }

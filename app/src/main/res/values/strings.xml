@@ -373,6 +373,12 @@
     <string name="pro_prompt_card_title">Growing recipe box? Unlock Spoonfile Pro</string>
     <string name="pro_prompt_card_body">Keep unlimited recipes, plan your week, and import whole recipe files. Pay once — %1$s.</string>
     <string name="pro_prompt_card_body_no_price">Keep unlimited recipes, plan your week, and import whole recipe files. Pay once.</string>
+    <string name="pro_prompt_cap_near_title">Your recipe box is filling up</string>
+    <string name="pro_prompt_cap_near_body">Keep saving without a limit with Spoonfile Pro. Pay once — %1$s.</string>
+    <string name="pro_prompt_cap_near_body_no_price">Keep saving without a limit with Spoonfile Pro. Pay once.</string>
+    <string name="pro_prompt_imports_title">Bringing recipes in? Unlock Spoonfile Pro</string>
+    <string name="pro_prompt_imports_body">Import a whole recipe file in one go, and keep unlimited recipes. Pay once — %1$s.</string>
+    <string name="pro_prompt_imports_body_no_price">Import a whole recipe file in one go, and keep unlimited recipes. Pay once.</string>
     <string name="pro_prompt_see_pro">See Pro</string>
     <string name="pro_prompt_not_now">Not now</string>
     <string name="pro_prompt_close_cd">Close Pro suggestion</string>

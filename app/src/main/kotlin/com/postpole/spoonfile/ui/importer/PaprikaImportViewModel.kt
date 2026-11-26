@@ -240,7 +240,10 @@ class PaprikaImportViewModel @Inject constructor(
             )
             logResult(if (saved.imported > 0) RESULT_OK else RESULT_NONE)
             // A whole-file import is one engaged event, however many recipes it brought in.
-            if (saved.imported > 0) proPrompts.recordEngaged()
+            if (saved.imported > 0) {
+                proPrompts.recordEngaged()
+                proPrompts.recordImport()
+            }
             thumbnails.clear()
             _state.value = PaprikaState.Done(summary)
         }

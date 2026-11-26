@@ -39,6 +39,13 @@ class ProPromptRepositoryTest {
         assertEquals(3, repo.history().engagedEvents)
     }
 
+    @Test fun importsCountOncePerCall_andSurviveASheet() = runBlocking {
+        repo.recordImport()
+        repo.recordImport() // a whole-file import is one call
+        repo.recordShown(ProPromptTrigger.COOK_OR_SAVE_MILESTONE)
+        assertEquals(2, repo.history().importCount)
+    }
+
     @Test fun showingTheSheetStampsItAndRestartsTheEngagedCount() = runBlocking {
         repeat(3) { repo.recordEngaged() }
         repo.recordShown(ProPromptTrigger.COOK_OR_SAVE_MILESTONE)

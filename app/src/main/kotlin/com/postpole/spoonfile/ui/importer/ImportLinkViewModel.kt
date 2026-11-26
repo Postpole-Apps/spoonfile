@@ -357,6 +357,7 @@ class ImportLinkViewModel @Inject constructor(
                 )
                 photoBytes = null
                 proPrompts.recordEngaged()
+                proPrompts.recordImport()
                 _events.trySend(ImportEvent.Saved(id))
             } catch (e: CancellationException) {
                 storedPhoto?.let { repository.deleteImage(it) }
