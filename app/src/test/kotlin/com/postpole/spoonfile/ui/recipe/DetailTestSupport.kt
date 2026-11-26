@@ -44,6 +44,7 @@ internal class RecordedAnalytics : Analytics {
 internal class CountingSignals : ProPromptSignals {
     val hardGates = AtomicInteger()
     override suspend fun recordEngaged() = Unit
+    override suspend fun recordImport() = Unit
     override suspend fun recordHardGate() {
         hardGates.incrementAndGet()
     }

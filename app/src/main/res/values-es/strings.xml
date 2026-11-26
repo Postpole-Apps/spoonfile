@@ -382,6 +382,12 @@
     <string name="pro_prompt_card_title">¿Tu colección crece? Desbloquea Spoonfile Pro</string>
     <string name="pro_prompt_card_body">Guarda recetas ilimitadas, planifica tu semana e importa archivos completos de recetas. Pago único: %1$s.</string>
     <string name="pro_prompt_card_body_no_price">Guarda recetas ilimitadas, planifica tu semana e importa archivos completos de recetas. Pago único.</string>
+    <string name="pro_prompt_cap_near_title">Tu recetario se está llenando</string>
+    <string name="pro_prompt_cap_near_body">Guarda sin límite con Spoonfile Pro. Pago único: %1$s.</string>
+    <string name="pro_prompt_cap_near_body_no_price">Guarda sin límite con Spoonfile Pro. Pago único.</string>
+    <string name="pro_prompt_imports_title">¿Importas recetas? Desbloquea Spoonfile Pro</string>
+    <string name="pro_prompt_imports_body">Importa archivos completos de una vez y guarda recetas ilimitadas. Pago único: %1$s.</string>
+    <string name="pro_prompt_imports_body_no_price">Importa archivos completos de una vez y guarda recetas ilimitadas. Pago único.</string>
     <string name="pro_prompt_see_pro">Ver Pro</string>
     <string name="pro_prompt_not_now">Ahora no</string>
     <string name="pro_prompt_close_cd">Cerrar sugerencia de Pro</string>

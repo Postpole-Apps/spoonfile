@@ -14,6 +14,9 @@ interface ProPromptSignals {
     /** A cook-mode completion or a recipe save happened. A whole-file or bulk import is one call, not one per recipe. */
     suspend fun recordEngaged()
 
+    /** An import saved at least one recipe. A whole-file import is one call, not one per recipe. */
+    suspend fun recordImport()
+
     /** A hard gate (cap, meal plan, oversized import) sent the user to the Pro screen. */
     suspend fun recordHardGate()
 }
@@ -21,6 +24,7 @@ interface ProPromptSignals {
 /** Used where nothing listens (tests). */
 object NoOpProPromptSignals : ProPromptSignals {
     override suspend fun recordEngaged() = Unit
+    override suspend fun recordImport() = Unit
     override suspend fun recordHardGate() = Unit
 }
 
@@ -43,11 +47,16 @@ class ProPromptRepository(
             cardDismissals = triggers.mapNotNull { id -> prefs[cardDismissalsKey(id)]?.let { id to it } }.toMap(),
             lastHardGateAt = prefs[LAST_HARD_GATE_AT],
             engagedEvents = prefs[ENGAGED_EVENTS] ?: 0,
+            importCount = prefs[IMPORT_COUNT] ?: 0,
         )
     }
 
     override suspend fun recordEngaged() {
         dataStore.edit { it[ENGAGED_EVENTS] = (it[ENGAGED_EVENTS] ?: 0) + 1 }
+    }
+
+    override suspend fun recordImport() {
+        dataStore.edit { it[IMPORT_COUNT] = (it[IMPORT_COUNT] ?: 0) + 1 }
     }
 
     override suspend fun recordHardGate() {
@@ -86,6 +95,7 @@ class ProPromptRepository(
         val LAST_CARD_AT = longPreferencesKey("pro_prompt_last_card_at")
         val LAST_HARD_GATE_AT = longPreferencesKey("pro_prompt_last_hard_gate_at")
         val ENGAGED_EVENTS = intPreferencesKey("pro_prompt_engaged_events")
+        val IMPORT_COUNT = intPreferencesKey("pro_prompt_import_count")
 
         fun cardDismissedKey(trigger: String) = longPreferencesKey("pro_prompt_card_dismissed_${trigger}_at")
         fun cardDismissalsKey(trigger: String) = intPreferencesKey("pro_prompt_card_dismissals_$trigger")

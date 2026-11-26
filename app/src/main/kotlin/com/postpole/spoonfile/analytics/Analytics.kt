@@ -74,8 +74,8 @@ object AnalyticsParams {
     const val SOURCE = "source"
 
     /**
-     * Why the Pro screen was opened: `auto_recipes_milestone`, `auto_cook_or_save_milestone` (automatic prompts), or
-     * the trigger of an automatic prompt on `pro_prompt_*` events (`recipes_milestone`, `cook_or_save_milestone`).
+     * Why the Pro screen was opened: `auto_<trigger>` for an automatic prompt, or the bare trigger on `pro_prompt_*`
+     * events. Triggers: `recipes_milestone`, `cook_or_save_milestone`, `recipe_cap_near`, `imports_3`.
      */
     const val TRIGGER = "trigger"
 

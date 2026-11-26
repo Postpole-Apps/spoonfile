@@ -221,10 +221,13 @@ fun RecipeListScreen(
                     onOpenMealPlan,
                     onSeeAll = { showCategories = true },
                     // Never alongside the limit or backup banners.
-                    proCard = if (activePrompt == ProPromptTrigger.RECIPES_MILESTONE && !state.atLimit && !state.showBackupNudge) {
-                        ProCardUi(proPrice, onSeePro = { openFromPrompt() }, onNotNow = { promptViewModel.onDismissed(ProPromptDismissMethod.NOT_NOW) })
-                    } else {
-                        null
+                    proCard = activePrompt?.takeIf { it.isRecipesCard() && !state.atLimit && !state.showBackupNudge }?.let {
+                        ProCardUi(
+                            price = proPrice,
+                            onSeePro = { openFromPrompt() },
+                            onNotNow = { promptViewModel.onDismissed(ProPromptDismissMethod.NOT_NOW) },
+                            trigger = it,
+                        )
                     },
                 )
             }
@@ -392,7 +395,12 @@ private fun RecipeGrid(
         }
         if (proCard != null) {
             item(span = full, key = "pro-card") {
-                ProInlineCard(price = proCard.price, onSeePro = proCard.onSeePro, onNotNow = proCard.onNotNow)
+                ProInlineCard(
+                    price = proCard.price,
+                    onSeePro = proCard.onSeePro,
+                    onNotNow = proCard.onNotNow,
+                    trigger = proCard.trigger,
+                )
             }
         }
         if (state.categories.isNotEmpty()) {

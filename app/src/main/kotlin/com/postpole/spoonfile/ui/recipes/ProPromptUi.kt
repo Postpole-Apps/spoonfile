@@ -33,18 +33,50 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.postpole.spoonfile.R
 import com.postpole.spoonfile.analytics.ProPromptDismissMethod
+import com.postpole.spoonfile.pro.ProPromptSurface
+import com.postpole.spoonfile.pro.ProPromptTrigger
 import kotlinx.coroutines.launch
 
 /** What [ProInlineCard] needs from the list screen. */
-data class ProCardUi(val price: String?, val onSeePro: () -> Unit, val onNotNow: () -> Unit)
+data class ProCardUi(
+    val price: String?,
+    val onSeePro: () -> Unit,
+    val onNotNow: () -> Unit,
+    val trigger: ProPromptTrigger = ProPromptTrigger.RECIPES_MILESTONE,
+)
+
+/** True for the triggers that render as a card on the Recipes list. */
+fun ProPromptTrigger.isRecipesCard(): Boolean = surface == ProPromptSurface.CARD
 
 /**
- * Dismissible tonal card in the Recipes list header for `trigger=recipes_milestone`. [price] is the localized Play
- * price, or null until it loads (then the no-price copy is used). Never mentions ads.
+ * Dismissible tonal card in the Recipes list header for `recipes_milestone`, `recipe_cap_near` or `imports_3`
+ * (the copy follows [trigger]). [price] is the localized Play price, or null until it loads (then the no-price
+ * copy is used). Never mentions ads.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ProInlineCard(price: String?, onSeePro: () -> Unit, onNotNow: () -> Unit, modifier: Modifier = Modifier) {
+fun ProInlineCard(
+    price: String?,
+    onSeePro: () -> Unit,
+    onNotNow: () -> Unit,
+    modifier: Modifier = Modifier,
+    trigger: ProPromptTrigger = ProPromptTrigger.RECIPES_MILESTONE,
+) {
+    val title = when (trigger) {
+        ProPromptTrigger.RECIPE_CAP_NEAR -> R.string.pro_prompt_cap_near_title
+        ProPromptTrigger.IMPORTS_3 -> R.string.pro_prompt_imports_title
+        else -> R.string.pro_prompt_card_title
+    }
+    val body = when (trigger) {
+        ProPromptTrigger.RECIPE_CAP_NEAR -> R.string.pro_prompt_cap_near_body
+        ProPromptTrigger.IMPORTS_3 -> R.string.pro_prompt_imports_body
+        else -> R.string.pro_prompt_card_body
+    }
+    val bodyNoPrice = when (trigger) {
+        ProPromptTrigger.RECIPE_CAP_NEAR -> R.string.pro_prompt_cap_near_body_no_price
+        ProPromptTrigger.IMPORTS_3 -> R.string.pro_prompt_imports_body_no_price
+        else -> R.string.pro_prompt_card_body_no_price
+    }
     Surface(
         shape = MaterialTheme.shapes.extraLarge,
         color = MaterialTheme.colorScheme.secondaryContainer,
@@ -52,10 +84,9 @@ fun ProInlineCard(price: String?, onSeePro: () -> Unit, onNotNow: () -> Unit, mo
         modifier = modifier.fillMaxWidth(),
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(R.string.pro_prompt_card_title), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(title), style = MaterialTheme.typography.titleMedium)
             Text(
-                price?.let { stringResource(R.string.pro_prompt_card_body, it) }
-                    ?: stringResource(R.string.pro_prompt_card_body_no_price),
+                price?.let { stringResource(body, it) } ?: stringResource(bodyNoPrice),
                 style = MaterialTheme.typography.bodyMedium,
             )
             // Wraps onto a second line instead of clipping at large font scales.

@@ -42,6 +42,8 @@ class RemoteProPromptConfig(private val remote: FirebaseRemoteConfig) : ProPromp
             recipeCount = remoteValue(ProPromptConfigKeys.RECIPE_COUNT) { it.asLong() } ?: d.recipeCount.toLong(),
             cookOrImportCount = remoteValue(ProPromptConfigKeys.COOK_OR_IMPORT_COUNT) { it.asLong() }
                 ?: d.cookOrImportCount.toLong(),
+            capNearCount = remoteValue(ProPromptConfigKeys.CAP_NEAR_COUNT) { it.asLong() } ?: d.capNearCount.toLong(),
+            importCount = remoteValue(ProPromptConfigKeys.IMPORT_COUNT) { it.asLong() } ?: d.importCount.toLong(),
         )
     }
 
