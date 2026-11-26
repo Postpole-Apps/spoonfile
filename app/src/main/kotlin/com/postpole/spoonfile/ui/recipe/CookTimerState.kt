@@ -17,8 +17,20 @@ data class CookTimerState(
     val status: TimerStatus = TimerStatus.IDLE,
     val remainingMillis: Long = 0L,
     val endAtMillis: Long = 0L,
+    /**
+     * True once the finish chime + haptic were played for this FINISHED state. Persisted by [Saver] so a
+     * restored (process death / rotation) FINISHED timer does not alert again. Every transition that
+     * builds a fresh state ([start], [reset], [addMinute], ...) leaves it false.
+     */
+    val alerted: Boolean = false,
 ) {
     val active: Boolean get() = status != TimerStatus.IDLE
+
+    /** The finish alert is due: the timer is FINISHED and has not alerted yet. */
+    val alertDue: Boolean get() = status == TimerStatus.FINISHED && !alerted
+
+    /** Records that the finish alert was played. No effect unless FINISHED. */
+    fun markAlerted(): CookTimerState = if (status == TimerStatus.FINISHED) copy(alerted = true) else this
 
     fun start(seconds: Int, now: Long): CookTimerState =
         if (seconds <= 0) this else running(seconds * 1000L, now)
@@ -45,7 +57,11 @@ data class CookTimerState(
 
     fun reset(): CookTimerState = CookTimerState()
 
-    fun finish(): CookTimerState = if (active) CookTimerState(TimerStatus.FINISHED, 0L) else this
+    /** Already-finished timers are returned as is, so a set [alerted] flag is not cleared. */
+    fun finish(): CookTimerState = when (status) {
+        TimerStatus.IDLE, TimerStatus.FINISHED -> this
+        else -> CookTimerState(TimerStatus.FINISHED, 0L)
+    }
 
     /** Recomputes a running timer from its deadline; finishes it at once if the deadline has passed. */
     fun tick(now: Long): CookTimerState {
@@ -61,8 +77,15 @@ data class CookTimerState(
         const val QUICK_SECONDS = 5 * 60
 
         val Saver: Saver<CookTimerState, Any> = listSaver(
-            save = { listOf(it.status.name, it.remainingMillis, it.endAtMillis) },
-            restore = { CookTimerState(TimerStatus.valueOf(it[0] as String), it[1] as Long, it[2] as Long) },
+            save = { listOf(it.status.name, it.remainingMillis, it.endAtMillis, it.alerted) },
+            restore = {
+                CookTimerState(
+                    TimerStatus.valueOf(it[0] as String),
+                    it[1] as Long,
+                    it[2] as Long,
+                    alerted = it.getOrNull(3) as? Boolean ?: false,
+                )
+            },
         )
     }
 }

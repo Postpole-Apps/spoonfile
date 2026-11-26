@@ -17,7 +17,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import java.io.File
 
-/** Builds a real version-1 database from the exported 1.json schema, then upgrades it with [MIGRATION_1_2]. */
+/** Builds a real version-1 database from the exported 1.json schema, then upgrades it with [MIGRATION_1_2] and [MIGRATION_2_3]. */
 @RunWith(RobolectricTestRunner::class)
 class MigrationTest {
     @get:Rule val tmp = TemporaryFolder()
@@ -72,7 +72,7 @@ class MigrationTest {
         createV1(file)
 
         val upgraded = Room.databaseBuilder(context, AppDatabase::class.java, file.absolutePath)
-            .addMigrations(MIGRATION_1_2)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .allowMainThreadQueries()
             .build()
         db = upgraded
@@ -91,7 +91,28 @@ class MigrationTest {
     }
 
     @Test
-    fun schema2IsExported() {
+    fun upgrade2To3_addsNullLastCookedAt_keepingRows() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val file = File(tmp.root, "v1.db")
+        createV1(file)
+
+        val upgraded = Room.databaseBuilder(context, AppDatabase::class.java, file.absolutePath)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+            .allowMainThreadQueries()
+            .build()
+        db = upgraded
+
+        val recipe = upgraded.recipeDao().allRecipes().single()
+        assertEquals("Soup", recipe.title)
+        assertEquals(20L, recipe.updatedAt)
+        assertEquals(null, recipe.lastCookedAt)
+        upgraded.recipeDao().markCooked(recipe.id, 5)
+        assertEquals(5L, upgraded.recipeDao().allRecipes().single().lastCookedAt)
+    }
+
+    @Test
+    fun schema2And3AreExported() {
         assertEquals(2, schema(2).getInt("version"))
+        assertEquals(3, schema(3).getInt("version"))
     }
 }

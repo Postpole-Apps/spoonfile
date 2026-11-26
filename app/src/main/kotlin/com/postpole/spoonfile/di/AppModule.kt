@@ -28,6 +28,7 @@ import com.postpole.spoonfile.billing.PlayBillingGateway
 import com.postpole.spoonfile.data.AppDatabase
 import com.postpole.spoonfile.data.CategoryDao
 import com.postpole.spoonfile.data.MIGRATION_1_2
+import com.postpole.spoonfile.data.MIGRATION_2_3
 import com.postpole.spoonfile.data.MealPlanDao
 import com.postpole.spoonfile.data.RecipeDao
 import com.postpole.spoonfile.data.ShoppingDao
@@ -50,7 +51,7 @@ object AppModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, "app.db")
-            .addMigrations(MIGRATION_1_2)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .build()
 
     @Provides

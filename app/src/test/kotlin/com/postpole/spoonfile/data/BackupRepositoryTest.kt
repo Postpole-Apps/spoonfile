@@ -143,7 +143,7 @@ class BackupRepositoryTest {
     fun export_isVersionedAndNamed() {
         val json = JSONObject(String(entry(export(), "backup.json")!!))
         assertEquals("postpole-backup", json.getString("format"))
-        assertEquals(2, json.getInt("version"))
+        assertEquals(3, json.getInt("version"))
         listOf("recipes", "ingredients", "steps", "categories", "recipeCategories", "shoppingItems", "mealPlanEntries").forEach {
             assertTrue(it, json.has(it))
         }
@@ -197,6 +197,32 @@ class BackupRepositoryTest {
 
         assertEquals(listOf("Soup"), db.recipeDao().allRecipes().map { it.title })
         assertEquals(emptyList<MealPlanEntryEntity>(), db.mealPlanDao().getAll())
+    }
+
+    @Test
+    fun v3Backup_roundTripsLastCookedAt() = runBlocking {
+        val cooked = addRecipe("u1", "Soup")
+        addRecipe("u2", "Salad")
+        db.recipeDao().markCooked(cooked, 12_345)
+        val zip = export()
+        db.recipeDao().deleteAllRecipes()
+
+        assertEquals(2, import(zip))
+
+        assertEquals(mapOf("Soup" to 12_345L, "Salad" to null), db.recipeDao().allRecipes().associate { it.title to it.lastCookedAt })
+    }
+
+    @Test
+    fun v1AndV2Backups_restoreWithNullLastCookedAt() = runBlocking {
+        val id = addRecipe("u1", "Soup")
+        db.recipeDao().markCooked(id, 99)
+        val root = JSONObject(String(entry(export(), "backup.json")!!))
+        root.getJSONArray("recipes").getJSONObject(0).remove("lastCookedAt")
+        for (version in 1..2) {
+            val old = JSONObject(root.toString()).put("version", version)
+            assertEquals(1, import(zipOf("backup.json" to old.toString().toByteArray())))
+            assertEquals(null, db.recipeDao().allRecipes().single().lastCookedAt)
+        }
     }
 
     @Test

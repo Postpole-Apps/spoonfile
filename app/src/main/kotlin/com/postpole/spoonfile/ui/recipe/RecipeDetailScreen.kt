@@ -294,6 +294,9 @@ private fun DetailContent(state: RecipeDetailUiState, viewModel: RecipeDetailVie
                     )
                 }
                 SourceLine(recipe) { url -> uriHandler.openUri(url) }
+                lastCookedText(recipe.lastCookedAt)?.let {
+                    Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
                 recipe.description?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
             }
         }

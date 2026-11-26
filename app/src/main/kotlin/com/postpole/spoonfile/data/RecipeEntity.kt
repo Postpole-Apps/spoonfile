@@ -6,7 +6,7 @@ import androidx.room.PrimaryKey
 
 enum class RecipeOrigin { MANUAL, WEB, OCR, PAPRIKA, PASTE }
 
-enum class RecipeSort { RECENT, AZ, RATING }
+enum class RecipeSort { RECENT, AZ, RATING, LAST_COOKED }
 
 @Entity(
     tableName = "recipes",
@@ -32,4 +32,6 @@ data class RecipeEntity(
     val origin: RecipeOrigin = RecipeOrigin.MANUAL,
     val createdAt: Long,
     val updatedAt: Long,
+    /** Epoch ms of the last finished Cook mode ("Done" on the last step); null if never cooked. */
+    val lastCookedAt: Long? = null,
 )

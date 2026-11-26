@@ -16,7 +16,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         ShoppingItemEntity::class,
         MealPlanEntryEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -25,6 +25,13 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun categoryDao(): CategoryDao
     abstract fun shoppingDao(): ShoppingDao
     abstract fun mealPlanDao(): MealPlanDao
+}
+
+/** Version 2 to 3: adds the nullable `lastCookedAt` stamp to recipes. Existing rows stay null. */
+val MIGRATION_2_3: Migration = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `recipes` ADD COLUMN `lastCookedAt` INTEGER")
+    }
 }
 
 /** Version 1 to 2: adds the meal plan table only. Existing rows are untouched. */

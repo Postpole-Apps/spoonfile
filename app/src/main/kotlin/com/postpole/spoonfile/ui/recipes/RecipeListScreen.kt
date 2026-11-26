@@ -85,6 +85,7 @@ import com.postpole.spoonfile.data.CategoryWithCount
 import com.postpole.spoonfile.data.Limits
 import com.postpole.spoonfile.data.RecipeEntity
 import com.postpole.spoonfile.data.RecipeSort
+import com.postpole.spoonfile.ui.recipe.lastCookedText
 import com.postpole.spoonfile.ui.recipe.BottomFade
 import com.postpole.spoonfile.ui.recipe.RecipePhoto
 import com.postpole.spoonfile.ui.recipe.connectedShape
@@ -293,6 +294,7 @@ private fun ListToolbar(state: RecipeListUiState, viewModel: RecipeListViewModel
                 RecipeSort.RECENT to R.string.sort_recent,
                 RecipeSort.AZ to R.string.sort_az,
                 RecipeSort.RATING to R.string.sort_rating,
+                RecipeSort.LAST_COOKED to R.string.sort_last_cooked,
             ).forEach { (sort, label) ->
                 DropdownMenuItem(
                     text = { Text(stringResource(label)) },
@@ -548,6 +550,10 @@ private fun RecipeMeta(recipe: RecipeEntity) {
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+    // Wraps at large font scales instead of clipping.
+    lastCookedText(recipe.lastCookedAt)?.let {
+        Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
