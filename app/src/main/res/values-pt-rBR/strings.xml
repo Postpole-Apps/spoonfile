@@ -294,6 +294,16 @@
     <string name="categories_delete_message">A categoria é removida das suas receitas. As receitas em si permanecem.</string>
     <string name="recipes_backup_nudge">Faz tempo desde o seu último backup. Salve uma cópia das suas receitas e fotos.</string>
     <string name="recipes_backup_nudge_dismiss">Agora não</string>
+    <!-- Today's plan card (NEEDS NATIVE REVIEW) -->
+    <string name="recipes_today_plan_title">Plano de hoje</string>
+    <string name="recipes_today_plan_open_label">Abrir receita</string>
+    <string name="recipes_today_plan_cook_cd">Iniciar modo cozinha para %1$s</string>
+    <string name="recipes_today_plan_see_week">Ver a semana</string>
+    <plurals name="recipes_today_plan_more">
+        <item quantity="one">+%d outra</item>
+        <item quantity="many">+%d outras</item>
+        <item quantity="other">+%d outras</item>
+    </plurals>
     <string name="settings_theme">Tema</string>
     <string name="theme_system">Padrão do sistema</string>
     <string name="theme_system_hint">Segue a configuração do seu dispositivo</string>

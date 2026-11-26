@@ -4,7 +4,12 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.postpole.spoonfile.analytics.Analytics
+import com.postpole.spoonfile.analytics.AnalyticsEvents
+import com.postpole.spoonfile.analytics.AnalyticsParams
+import com.postpole.spoonfile.analytics.NoOpAnalytics
 import com.postpole.spoonfile.billing.BillingRepository
+import com.postpole.spoonfile.data.MealPlanRepository
 import com.postpole.spoonfile.data.BackupNudge
 import com.postpole.spoonfile.data.CategoryDao
 import com.postpole.spoonfile.data.SettingsRepository
@@ -24,9 +29,12 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import javax.inject.Inject
 
 /** The ways to start a new recipe from the Add sheet / empty state. */
@@ -40,6 +48,9 @@ sealed interface RecipeListEvent {
     data class Start(val action: AddAction) : RecipeListEvent
 }
 
+/** One of today's meal-plan entries (an entry, not a recipe: the same recipe can appear twice). */
+data class TodayPlanItem(val entryId: Long, val recipeId: Long, val title: String)
+
 data class RecipeListUiState(
     val query: String = "",
     val favoritesOnly: Boolean = false,
@@ -52,7 +63,12 @@ data class RecipeListUiState(
     val isPro: Boolean = false,
     val loaded: Boolean = false,
     val showBackupNudge: Boolean = false,
+    val todayPlan: List<TodayPlanItem> = emptyList(),
 ) {
+    /** The Pro-only Today's plan card; hidden while searching or filtering so results start at the top. */
+    val showTodayPlan: Boolean
+        get() = isPro && todayPlan.isNotEmpty() && query.isBlank() && selectedCategoryId == null && !favoritesOnly
+
     /** First [RecipeListViewModel.MAX_CATEGORY_TILES] categories; all of them when there are that many or fewer. */
     val visibleCategories: List<CategoryWithCount> get() = categories.take(RecipeListViewModel.MAX_CATEGORY_TILES)
     val showSeeAll: Boolean get() = categories.size > RecipeListViewModel.MAX_CATEGORY_TILES
@@ -70,7 +86,29 @@ class RecipeListViewModel @Inject constructor(
     billing: BillingRepository,
     private val settings: SettingsRepository,
     private val proPrompts: ProPromptSignals = NoOpProPromptSignals,
+    private val mealPlan: MealPlanRepository,
+    private val analytics: Analytics = NoOpAnalytics,
 ) : ViewModel() {
+
+    /** Today's date; replaceable in tests. */
+    internal var today: () -> LocalDate = { LocalDate.now() }
+
+    private val todayDate = MutableStateFlow(today())
+
+    /**
+     * Re-reads the date when the list returns to the front, so the card rolls over after midnight.
+     * A list left open across midnight updates on the next resume (no timer).
+     */
+    fun onResume() {
+        todayDate.value = today()
+    }
+
+    /** Free, revoked or unknown entitlement: always empty and the plan table is never queried. */
+    private val todayPlan: Flow<List<TodayPlanItem>> = combine(todayDate, billing.isProOrUnknown) { d, pro -> d to pro }
+        .flatMapLatest { (d, pro) ->
+            if (pro == true) mealPlan.observeRange(d, d) else flowOf(emptyList())
+        }
+        .map { rows -> rows.map { TodayPlanItem(it.entry.id, it.entry.recipeId, it.recipeTitle) } }
 
     private data class Filters(
         val query: String = "",
@@ -117,9 +155,14 @@ class RecipeListViewModel @Inject constructor(
         )
     }
 
-    val state: StateFlow<RecipeListUiState> = combine(base, showBackupNudge) { s, nudge ->
-        s.copy(showBackupNudge = nudge)
+    val state: StateFlow<RecipeListUiState> = combine(base, showBackupNudge, todayPlan) { s, nudge, plan ->
+        s.copy(showBackupNudge = nudge, todayPlan = plan)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RecipeListUiState())
+
+    /** A tap on the Today's plan card; [target] is a `TodayPlanTarget` value. */
+    fun onTodayPlanTap(target: String) {
+        analytics.logEvent(AnalyticsEvents.TODAY_PLAN_TAP, mapOf(AnalyticsParams.TARGET to target))
+    }
 
     fun dismissBackupNudge() {
         viewModelScope.launch { settings.dismissNudge(System.currentTimeMillis()) }

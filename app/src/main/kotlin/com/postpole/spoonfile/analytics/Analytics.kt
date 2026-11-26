@@ -43,6 +43,11 @@ object AnalyticsEvents {
     /** Plan ingredients were added to the shopping list. [AnalyticsParams.ITEM_COUNT] = lines added. */
     const val MEAL_PLAN_SHOP = "meal_plan_shop"
 
+    // --- Today's plan card on the Recipes list (Pro). Params: TARGET only; never recipe ids, titles or dates. ---
+
+    /** A tap on the Today's plan card. [AnalyticsParams.TARGET] is a [TodayPlanTarget] value. */
+    const val TODAY_PLAN_TAP = "today_plan_tap"
+
     // --- Automatic Pro prompts. Params: TRIGGER and SURFACE (and METHOD on dismiss); enums only. ---
 
     /** An automatic Pro prompt (card or sheet) was put on screen. */
@@ -79,6 +84,16 @@ object AnalyticsParams {
 
     /** A [ProPromptDismissMethod] value. */
     const val METHOD = "method"
+
+    /** A [TodayPlanTarget] value on `today_plan_tap`. */
+    const val TARGET = "target"
+}
+
+/** Values for [AnalyticsParams.TARGET] on `today_plan_tap`. */
+object TodayPlanTarget {
+    const val RECIPE = "recipe"
+    const val COOK = "cook"
+    const val WEEK = "week"
 }
 
 /** Values for [AnalyticsParams.METHOD] on `pro_prompt_dismissed`. */
