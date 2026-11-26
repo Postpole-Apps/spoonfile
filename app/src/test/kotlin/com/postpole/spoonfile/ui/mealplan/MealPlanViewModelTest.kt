@@ -231,6 +231,79 @@ class MealPlanViewModelTest {
         assertEquals(1, analytics.events.count { it.first == AnalyticsEvents.MEAL_PLAN_SHOP })
     }
 
+    private suspend fun proWithPlan(vararg dayRecipes: Pair<Int, Long>): MealPlanUiState {
+        makePro()
+        dayRecipes.forEach { (d, id) -> planEntry(monday.plusDays(d.toLong()), id) }
+        newVm()
+        return awaitState { s -> s.isPro && s.days.sumOf { it.entries.size } == dayRecipes.size }
+    }
+
+    @Test
+    fun addWeekToShopping_oneRecipePerDay() = runTest {
+        val other = recipes.upsertWithChildren(
+            RecipeEntity(uid = "u2", title = "Stew", createdAt = 1, updatedAt = 1),
+            listOf(IngredientEntity(position = 0, text = "1 onion")), emptyList(), emptyList(),
+        )
+        proWithPlan(1 to other, 0 to recipeId)
+
+        vm.addWeekToShopping()
+
+        assertEquals(MealPlanEvent.AddedToShopping(2), vm.events.first())
+        assertEquals(listOf("2 tomatoes", "1 onion"), db.shoppingDao().getAll().map { it.text })
+        awaitEvents { it.countOf(AnalyticsEvents.MEAL_PLAN_SHOP) >= 1 }
+        val shop = analytics.events.filter { it.first == AnalyticsEvents.MEAL_PLAN_SHOP }
+        assertEquals(1, shop.size)
+        assertEquals(2, shop.single().second["item_count"])
+    }
+
+    @Test
+    fun addWeekToShopping_sameRecipeOnTwoDays_addsIngredientsTwice() = runTest {
+        proWithPlan(0 to recipeId, 4 to recipeId)
+
+        vm.addWeekToShopping()
+
+        assertEquals(MealPlanEvent.AddedToShopping(2), vm.events.first())
+        assertEquals(listOf("2 tomatoes", "2 tomatoes"), db.shoppingDao().getAll().map { it.text })
+    }
+
+    @Test
+    fun addWeekToShopping_emptyWeek_writesNothing() = runTest {
+        proWithPlan()
+
+        vm.addWeekToShopping()
+
+        assertEquals(MealPlanEvent.AddedToShopping(0), vm.events.first())
+        assertEquals(0, db.shoppingDao().getAll().size)
+        assertTrue(analytics.events.none { it.first == AnalyticsEvents.MEAL_PLAN_SHOP })
+    }
+
+    @Test
+    fun addWeekToShopping_onlyHeaderLines_writesNothing() = runTest {
+        val headers = recipes.upsertWithChildren(
+            RecipeEntity(uid = "u4", title = "Sections", createdAt = 1, updatedAt = 1),
+            listOf(IngredientEntity(position = 0, text = "For the sauce", isHeader = true)), emptyList(), emptyList(),
+        )
+        proWithPlan(0 to headers, 2 to headers)
+
+        vm.addWeekToShopping()
+
+        assertEquals(MealPlanEvent.AddedToShopping(0), vm.events.first())
+        assertEquals(0, db.shoppingDao().getAll().size)
+    }
+
+    @Test
+    fun addWeekToShopping_requiresPro() = runTest {
+        planEntry(monday, recipeId)
+        newVm()
+        awaitState { it.entitlementKnown }
+
+        vm.addWeekToShopping()
+
+        assertEquals(MealPlanEvent.OpenPro, vm.events.first())
+        assertEquals(0, db.shoppingDao().getAll().size)
+        assertTrue(analytics.events.none { it.first == AnalyticsEvents.MEAL_PLAN_SHOP })
+    }
+
     private suspend fun planEntry(date: LocalDate, id: Long) =
         db.mealPlanDao().insert(com.postpole.spoonfile.data.MealPlanEntryEntity(date = date.toString(), recipeId = id, createdAt = 1))
 

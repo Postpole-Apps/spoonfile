@@ -156,6 +156,15 @@ fun MealPlanScreen(
                     onRepeat = viewModel::repeatLastWeek,
                 )
             }
+            item {
+                val weekCd = stringResource(R.string.meal_plan_add_week_to_shopping_cd)
+                TextButton(
+                    onClick = viewModel::addWeekToShopping,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).semantics { contentDescription = weekCd },
+                ) {
+                    Text(stringResource(R.string.meal_plan_add_week_to_shopping))
+                }
+            }
             items(state.days, key = { it.date.toString() }) { day ->
                 DayCard(
                     day = day,

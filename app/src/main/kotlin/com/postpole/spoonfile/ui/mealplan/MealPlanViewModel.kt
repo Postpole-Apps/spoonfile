@@ -211,6 +211,20 @@ class MealPlanViewModel @Inject constructor(
     /** Adds every recipe planned on [day] (in order) to the shopping list at default servings. */
     fun addDayToShopping(day: MealPlanDay) = shop(day.entries.map { it.entry.recipeId })
 
+    /**
+     * Adds every planned recipe in the visible week (day, then position; repeats kept) to the shopping
+     * list at default servings. An empty week writes nothing and reports 0 lines.
+     */
+    fun addWeekToShopping() {
+        if (!requirePro()) return
+        val recipeIds = state.value.days.flatMap { day -> day.entries.map { it.entry.recipeId } }
+        if (recipeIds.isEmpty()) {
+            _events.trySend(MealPlanEvent.AddedToShopping(0))
+            return
+        }
+        shop(recipeIds)
+    }
+
     private fun shop(recipeIds: List<Long>) {
         if (recipeIds.isEmpty() || !requirePro()) return
         viewModelScope.launch {
