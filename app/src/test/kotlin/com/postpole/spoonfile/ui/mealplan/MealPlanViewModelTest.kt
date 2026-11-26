@@ -51,6 +51,7 @@ import org.robolectric.RobolectricTestRunner
 import java.io.File
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.util.concurrent.CopyOnWriteArrayList
 
 private class IdleBillingGateway : BillingGateway {
     override val updates: Flow<PurchaseUpdate> = emptyFlow()
@@ -63,7 +64,8 @@ private class IdleBillingGateway : BillingGateway {
 }
 
 private class RecordingAnalytics : Analytics {
-    val events = mutableListOf<Pair<String, Map<String, Any>>>()
+    // Appended from Room/Unconfined threads and read from the test thread.
+    val events = CopyOnWriteArrayList<Pair<String, Map<String, Any>>>()
     override fun logEvent(name: String, params: Map<String, Any>) {
         events += name to params
     }
@@ -127,6 +129,17 @@ class MealPlanViewModelTest {
     private suspend fun awaitState(predicate: (MealPlanUiState) -> Boolean): MealPlanUiState =
         withContext(Dispatchers.Default) { withTimeout(10_000) { vm.state.first(predicate) } }
 
+    /** Analytics are logged asynchronously; poll a snapshot (bounded, 10 s) until [predicate] holds. */
+    private suspend fun awaitEvents(predicate: (List<Pair<String, Map<String, Any>>>) -> Boolean) {
+        withContext(Dispatchers.Default) {
+            withTimeout(10_000) {
+                while (!predicate(analytics.events.toList())) kotlinx.coroutines.delay(10)
+            }
+        }
+    }
+
+    private fun List<Pair<String, Map<String, Any>>>.countOf(name: String) = count { it.first == name }
+
     @Test
     fun freeUser_cannotWriteAnything() = runTest {
         newVm()
@@ -164,13 +177,9 @@ class MealPlanViewModelTest {
         vm.addRecipe(monday.plusDays(2), recipeId)
         vm.addRecipe(monday.plusDays(2), recipeId)
         val state = awaitState { s -> s.days.sumOf { it.entries.size } == 2 }
-        // The view event is logged asynchronously from init (after a database read); wait for it
-        // instead of racing it.
-        withContext(Dispatchers.Default) {
-            withTimeout(10_000) {
-                while (analytics.events.none { it.first == AnalyticsEvents.MEAL_PLAN_VIEW }) kotlinx.coroutines.delay(10)
-            }
-        }
+        // The view event (after a database read) and both add events are logged asynchronously;
+        // wait for them instead of racing them.
+        awaitEvents { it.countOf(AnalyticsEvents.MEAL_PLAN_VIEW) >= 1 && it.countOf(AnalyticsEvents.MEAL_PLAN_ADD) >= 2 }
 
         assertEquals(7, state.days.size)
         assertEquals(monday, state.weekStart)
@@ -243,6 +252,7 @@ class MealPlanViewModelTest {
         val state = awaitState { s -> s.days.sumOf { it.entries.size } == 3 }
         assertEquals(listOf(recipeId, other), state.days[0].entries.map { it.entry.recipeId })
         assertEquals(listOf(recipeId), state.days[3].entries.map { it.entry.recipeId })
+        awaitEvents { it.countOf(AnalyticsEvents.MEAL_PLAN_ADD) >= 1 }
         val adds = analytics.events.filter { it.first == AnalyticsEvents.MEAL_PLAN_ADD }
         assertEquals(1, adds.size)
         assertEquals(2, adds.single().second["item_count"])
