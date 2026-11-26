@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.WeekFields
@@ -57,8 +58,11 @@ sealed interface MealPlanEvent {
     /** Ingredients were added to the shopping list ([count] lines; 0 when there was nothing to add). */
     data class AddedToShopping(val count: Int) : MealPlanEvent
 
-    /** Last week's meals were copied ([count] new entries; may be 0 if all were already planned). */
+    /** Last week's meals were copied ([count] new entries, always at least 1). */
     data class Repeated(val count: Int) : MealPlanEvent
+
+    /** Last week has meals but all are already planned on the matching day, so nothing was written. */
+    data object RepeatAlreadyPlanned : MealPlanEvent
 
     /** Last week has no meals, so nothing was written. */
     data object RepeatEmpty : MealPlanEvent
@@ -177,20 +181,30 @@ class MealPlanViewModel @Inject constructor(
         }
     }
 
-    /** Copies last week's meals onto the visible week, skipping recipes already planned on that day. */
+    private val copyLock = Mutex()
+
+    /**
+     * Copies last week's meals onto the visible week, skipping recipes already planned on that day. A tap
+     * while a copy is running is ignored, so two rapid taps give the same result as one.
+     */
     fun repeatLastWeek() {
         if (!requirePro()) return
+        if (!copyLock.tryLock()) return
         viewModelScope.launch {
-            val start = weekStart.value
-            val result = plan.copyWeek(start.minusWeeks(1), start)
-            if (result.sourceCount == 0) {
-                _events.send(MealPlanEvent.RepeatEmpty)
-                return@launch
+            try {
+                val start = weekStart.value
+                val result = plan.copyWeek(start.minusWeeks(1), start)
+                when {
+                    result.sourceCount == 0 -> _events.send(MealPlanEvent.RepeatEmpty)
+                    result.copied == 0 -> _events.send(MealPlanEvent.RepeatAlreadyPlanned)
+                    else -> {
+                        analytics.logEvent(AnalyticsEvents.MEAL_PLAN_ADD, mapOf(AnalyticsParams.ITEM_COUNT to result.copied))
+                        _events.send(MealPlanEvent.Repeated(result.copied))
+                    }
+                }
+            } finally {
+                copyLock.unlock()
             }
-            if (result.copied > 0) {
-                analytics.logEvent(AnalyticsEvents.MEAL_PLAN_ADD, mapOf(AnalyticsParams.ITEM_COUNT to result.copied))
-            }
-            _events.send(MealPlanEvent.Repeated(result.copied))
         }
     }
 

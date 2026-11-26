@@ -61,7 +61,8 @@
     <string name="meal_plan_nothing_to_shop">Il n\'y a aucun ingrédient à ajouter.</string>
     <string name="meal_plan_repeat_week">Copier la semaine dernière</string>
     <string name="meal_plan_repeat_week_cd">Copier les repas de la semaine dernière dans cette semaine</string>
-    <string name="meal_plan_repeat_empty">La semaine dernière n\'a aucun repas à copier</string>
+    <string name="meal_plan_repeat_empty">Rien à copier de la semaine dernière</string>
+    <string name="meal_plan_repeat_already">Les repas de la semaine dernière sont déjà dans cette semaine</string>
     <plurals name="meal_plan_repeated">
         <item quantity="one">%1$d repas de la semaine dernière copié</item>
         <item quantity="other">%1$d repas de la semaine dernière copiés</item>

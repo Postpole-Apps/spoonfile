@@ -28,6 +28,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
@@ -342,6 +344,52 @@ class MealPlanViewModelTest {
         assertEquals(MealPlanEvent.RepeatEmpty, vm.events.first())
         assertEquals(0, db.mealPlanDao().getAll().size)
         assertTrue(analytics.events.none { it.first == AnalyticsEvents.MEAL_PLAN_ADD })
+    }
+
+    @Test
+    fun repeatLastWeek_allAlreadyPlanned_showsAlreadyPlannedMessage_notCopiedZero() = runTest {
+        makePro()
+        planEntry(monday.minusDays(7), recipeId)
+        planEntry(monday, recipeId)
+        newVm()
+        awaitState { it.isPro }
+
+        vm.repeatLastWeek()
+
+        assertEquals(MealPlanEvent.RepeatAlreadyPlanned, vm.events.first())
+        assertEquals(2, db.mealPlanDao().getAll().size)
+        assertTrue(analytics.events.none { it.first == AnalyticsEvents.MEAL_PLAN_ADD })
+    }
+
+    @Test
+    fun copyWeek_concurrentCalls_produceNoDuplicates() = runTest {
+        val other = recipes.upsertWithChildren(RecipeEntity(uid = "u2", title = "Stew", createdAt = 1, updatedAt = 1), emptyList(), emptyList(), emptyList())
+        planEntry(monday.minusDays(7), recipeId)
+        planEntry(monday.minusDays(7), other)
+        val plan = MealPlanRepository(db.mealPlanDao(), db.recipeDao(), ShoppingRepository(db.shoppingDao()))
+
+        val results = withContext(Dispatchers.Default) {
+            List(8) { async { plan.copyWeek(monday.minusWeeks(1), monday, now = 5) } }.awaitAll()
+        }
+
+        assertEquals(2, results.sumOf { it.copied })
+        val thisWeek = db.mealPlanDao().getAll().filter { it.date == monday.toString() }
+        assertEquals(listOf(recipeId, other), thisWeek.map { it.recipeId })
+        assertEquals(listOf(0, 1), thisWeek.map { it.position })
+    }
+
+    @Test
+    fun repeatLastWeek_rapidDoubleTap_sameAsOne() = runTest {
+        makePro()
+        planEntry(monday.minusDays(7), recipeId)
+        newVm()
+        awaitState { it.isPro }
+
+        vm.repeatLastWeek()
+        vm.repeatLastWeek()
+
+        assertEquals(MealPlanEvent.Repeated(1), vm.events.first())
+        assertEquals(1, db.mealPlanDao().getAll().count { it.date == monday.toString() })
     }
 
     @Test

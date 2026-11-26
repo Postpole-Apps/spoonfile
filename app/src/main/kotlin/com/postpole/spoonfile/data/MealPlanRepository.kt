@@ -26,25 +26,9 @@ class MealPlanRepository @Inject constructor(
         )
     }
 
-    /**
-     * Copies each entry of the 7 days starting at [fromStart] onto the matching day of the week starting at
-     * [toStart]. A recipe already planned on the destination day is skipped, and nothing is deleted.
-     */
-    suspend fun copyWeek(fromStart: LocalDate, toStart: LocalDate, now: Long = System.currentTimeMillis()): CopyWeekResult {
-        val source = dao.getRange(fromStart.toString(), fromStart.plusDays(6).toString())
-        var copied = 0
-        for (offset in 0L..6L) {
-            val sourceKey = fromStart.plusDays(offset).toString()
-            val destDate = toStart.plusDays(offset)
-            val planned = dao.getRange(destDate.toString(), destDate.toString()).mapTo(mutableSetOf()) { it.recipeId }
-            for (entry in source.filter { it.date == sourceKey }) {
-                if (!planned.add(entry.recipeId)) continue
-                add(destDate, entry.recipeId, now)
-                copied++
-            }
-        }
-        return CopyWeekResult(sourceCount = source.size, copied = copied)
-    }
+    /** See [MealPlanDao.copyWeek]: runs inside a single Room transaction. */
+    suspend fun copyWeek(fromStart: LocalDate, toStart: LocalDate, now: Long = System.currentTimeMillis()): CopyWeekResult =
+        dao.copyWeek(fromStart, toStart, now)
 
     suspend fun remove(entryId: Long) = dao.delete(entryId)
 
