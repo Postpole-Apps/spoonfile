@@ -164,6 +164,13 @@ class MealPlanViewModelTest {
         vm.addRecipe(monday.plusDays(2), recipeId)
         vm.addRecipe(monday.plusDays(2), recipeId)
         val state = awaitState { s -> s.days.sumOf { it.entries.size } == 2 }
+        // The view event is logged asynchronously from init (after a database read); wait for it
+        // instead of racing it.
+        withContext(Dispatchers.Default) {
+            withTimeout(10_000) {
+                while (analytics.events.none { it.first == AnalyticsEvents.MEAL_PLAN_VIEW }) kotlinx.coroutines.delay(10)
+            }
+        }
 
         assertEquals(7, state.days.size)
         assertEquals(monday, state.weekStart)
