@@ -24,6 +24,8 @@ abstract class RecipeDao {
         ORDER BY
           CASE WHEN :sort = 'AZ' THEN title END COLLATE NOCASE ASC,
           CASE WHEN :sort = 'RATING' THEN rating END DESC,
+          CASE WHEN :sort = 'LAST_COOKED' THEN lastCookedAt IS NULL END ASC,
+          CASE WHEN :sort = 'LAST_COOKED' THEN lastCookedAt END DESC,
           updatedAt DESC
         """,
     )
@@ -91,6 +93,10 @@ abstract class RecipeDao {
 
     fun observeDetails(id: Long): Flow<RecipeWithDetails?> =
         observeDetailsRaw(id).map { it?.ordered() }
+
+    /** Stamps only `lastCookedAt`; `updatedAt` is left alone so Recent keeps meaning last edited. */
+    @Query("UPDATE recipes SET lastCookedAt = :nowMillis WHERE id = :id")
+    abstract suspend fun markCooked(id: Long, nowMillis: Long)
 
     @Query("DELETE FROM recipes WHERE id = :id")
     abstract suspend fun delete(id: Long)

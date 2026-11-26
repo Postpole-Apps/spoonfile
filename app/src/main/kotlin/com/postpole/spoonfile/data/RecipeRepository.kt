@@ -51,6 +51,9 @@ class RecipeRepository @Inject constructor(
         return id
     }
 
+    /** Records that Cook mode was finished for [id]. One timestamp (overwrites); does not touch `updatedAt`. */
+    suspend fun markCooked(id: Long, nowMillis: Long = System.currentTimeMillis()) = dao.markCooked(id, nowMillis)
+
     /** Deletes the recipe (children cascade) and its photo file. */
     suspend fun delete(id: Long) {
         val image = dao.getById(id)?.imageFile

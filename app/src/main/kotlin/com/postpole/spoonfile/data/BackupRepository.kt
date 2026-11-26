@@ -31,7 +31,8 @@ internal class BackupData(
  * Backup of all Room data plus recipe photos as one `.zip` (`backup.json` + `images/`). Works on plain
  * streams; the UI supplies them from the Storage Access Framework, so no storage permission is needed.
  *
- * Format v2: `{"format":"postpole-backup","version":2,"exportedAt":<ms>,` then the arrays `recipes`,
+ * Format v3 (adds `lastCookedAt` to recipes; v1/v2 files lack it and restore with null):
+ * `{"format":"postpole-backup","version":3,"exportedAt":<ms>,` then the arrays `recipes`,
  * `ingredients`, `steps`, `categories`, `recipeCategories`, `shoppingItems`, `mealPlanEntries` (v1 files
  * lack the last one and restore with an empty plan). Add new tables as
  * top-level arrays and bump [FORMAT_VERSION]; keep reading older versions.
@@ -175,6 +176,7 @@ class BackupRepository @Inject constructor(
                     origin = RecipeOrigin.entries.firstOrNull { it.name == o.getString("origin") } ?: RecipeOrigin.MANUAL,
                     createdAt = o.getLong("createdAt"),
                     updatedAt = o.getLong("updatedAt"),
+                    lastCookedAt = if (o.isNull("lastCookedAt")) null else o.getLong("lastCookedAt"),
                 )
             }
             requireUnique(recipes.map { it.id }, "recipe id")
@@ -281,9 +283,10 @@ class BackupRepository @Inject constructor(
         .put("origin", r.origin.name)
         .put("createdAt", r.createdAt)
         .put("updatedAt", r.updatedAt)
+        .put("lastCookedAt", r.lastCookedAt ?: JSONObject.NULL)
 
     companion object {
         const val FORMAT_NAME = "postpole-backup"
-        const val FORMAT_VERSION = 2
+        const val FORMAT_VERSION = 3
     }
 }

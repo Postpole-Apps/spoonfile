@@ -82,7 +82,10 @@ class RecipeDetailViewModel @Inject constructor(
     }
 
     /** Cook mode was finished with "Done" on the last step. */
-    suspend fun onCookCompleted() = proPrompts.recordEngaged()
+    suspend fun onCookCompleted() {
+        repository.markCooked(recipeId, System.currentTimeMillis())
+        proPrompts.recordEngaged()
+    }
 
     fun toggleFavorite() = update { it.copy(favorite = !it.favorite) }
 

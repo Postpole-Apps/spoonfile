@@ -76,6 +76,10 @@
     <string name="sort_recent">Neueste</string>
     <string name="sort_az">A–Z</string>
     <string name="sort_rating">Bewertung</string>
+    <string name="sort_last_cooked">Zuletzt gekocht</string>
+    <string name="detail_last_cooked">Zuletzt gekocht %1$s</string>
+    <string name="detail_last_cooked_today">Heute gekocht</string>
+    <string name="detail_last_cooked_yesterday">Gestern gekocht</string>
     <string name="fab_add_recipe">Rezept hinzufügen</string>
     <string name="empty_title">Noch keine Rezepte</string>
     <string name="empty_paste_link">Link einfügen</string>

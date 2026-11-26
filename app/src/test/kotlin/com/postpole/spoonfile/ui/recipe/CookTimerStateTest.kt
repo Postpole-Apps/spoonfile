@@ -3,6 +3,7 @@ package com.postpole.spoonfile.ui.recipe
 import androidx.compose.runtime.saveable.SaverScope
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class CookTimerStateTest {
@@ -67,6 +68,60 @@ class CookTimerStateTest {
         val paused = CookTimerState().start(60, 0).pause(20_000)
         assertEquals(paused, roundTrip(paused))
         assertEquals(40_000L, roundTrip(paused).tick(900_000).remainingMillis)
+    }
+
+    @Test fun runningToFinished_alertsOnce() {
+        val finished = CookTimerState().start(60, 0).tick(60_000)
+        assertTrue(finished.alertDue)
+        val alerted = finished.markAlerted()
+        assertFalse(alerted.alertDue)
+        // Further ticks do not re-arm it.
+        assertFalse(alerted.tick(120_000).alertDue)
+        assertFalse(alerted.finish().alertDue)
+    }
+
+    @Test fun restoredFinishedAfterAlert_doesNotAlertAgain() {
+        val restored = roundTrip(CookTimerState().start(60, 0).tick(60_000).markAlerted())
+        assertEquals(TimerStatus.FINISHED, restored.status)
+        assertTrue(restored.alerted)
+        assertFalse(restored.alertDue)
+    }
+
+    @Test fun restoredFinishedBeforeAlert_stillAlertsOnce() {
+        val restored = roundTrip(CookTimerState().start(60, 0).tick(60_000))
+        assertTrue(restored.alertDue)
+    }
+
+    @Test fun runningPastDeadlineOnReturn_alertsOnce() {
+        val restored = roundTrip(CookTimerState().start(60, 5_000))
+        assertFalse(restored.alertDue)
+        val back = restored.tick(500_000)
+        assertTrue(back.alertDue)
+        val done = back.markAlerted()
+        assertFalse(roundTrip(done).alertDue)
+    }
+
+    @Test fun resetAndNewStartClearTheFlag_soItCanAlertAgain() {
+        val alerted = CookTimerState().start(1, 0).tick(1_000).markAlerted()
+        assertFalse(alerted.reset().alerted)
+        val second = alerted.reset().start(1, 10_000).tick(11_000)
+        assertTrue(second.alertDue)
+        // "+1 min" on a finished timer restarts it; its next finish alerts again.
+        val again = alerted.addMinute(20_000)
+        assertFalse(again.alerted)
+        assertTrue(again.tick(80_000).alertDue)
+    }
+
+    @Test fun markAlerted_ignoredUnlessFinished() {
+        val running = CookTimerState().start(60, 0)
+        assertEquals(running, running.markAlerted())
+        assertEquals(CookTimerState(), CookTimerState().markAlerted())
+    }
+
+    @Test fun oldThreeElementSavedStateStillRestores() {
+        val restored = with(CookTimerState.Saver) { restore(listOf("FINISHED", 0L, 0L))!! }
+        assertEquals(TimerStatus.FINISHED, restored.status)
+        assertFalse(restored.alerted)
     }
 
     @Test fun resetClears() {

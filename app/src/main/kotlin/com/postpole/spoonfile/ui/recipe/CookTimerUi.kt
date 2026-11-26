@@ -103,8 +103,11 @@ internal fun CookTimerSection(
     val finished = timer.status == TimerStatus.FINISHED
     val haptics = LocalHapticFeedback.current
     val context = LocalContext.current
-    LaunchedEffect(finished) {
-        if (finished) {
+    // Alert only when the timer becomes FINISHED and has not alerted yet. The flag is set before playing and
+    // is saved with the state, so rotation or process restore while "Time's up" shows stays silent.
+    LaunchedEffect(timer.alertDue) {
+        if (timer.alertDue) {
+            change(current.markAlerted())
             runCatching { haptics.performHapticFeedback(HapticFeedbackType.LongPress) }
             playChime(context)
         }
