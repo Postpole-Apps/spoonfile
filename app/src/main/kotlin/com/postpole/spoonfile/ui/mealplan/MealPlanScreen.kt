@@ -105,6 +105,7 @@ fun MealPlanScreen(
                     context.startActivity(Intent.createChooser(send, shareTitle))
                 }
                 MealPlanEvent.RepeatEmpty -> snackbar.showLatestSnackbar(context.getString(R.string.meal_plan_repeat_empty))
+                MealPlanEvent.RepeatAlreadyPlanned -> snackbar.showLatestSnackbar(context.getString(R.string.meal_plan_repeat_already))
                 is MealPlanEvent.Repeated -> snackbar.showLatestSnackbar(
                     context.resources.getQuantityString(R.plurals.meal_plan_repeated, event.count, event.count),
                 )
