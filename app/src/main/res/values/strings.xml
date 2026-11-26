@@ -287,6 +287,14 @@
     <string name="categories_delete_message">The category is removed from your recipes. The recipes themselves stay.</string>
     <string name="recipes_backup_nudge">It\'s been a while since your last backup. Save a copy of your recipes and photos.</string>
     <string name="recipes_backup_nudge_dismiss">Not now</string>
+    <string name="recipes_today_plan_title">Today\'s plan</string>
+    <string name="recipes_today_plan_open_label">Open recipe</string>
+    <string name="recipes_today_plan_cook_cd">Start cook mode for %1$s</string>
+    <string name="recipes_today_plan_see_week">See the week</string>
+    <plurals name="recipes_today_plan_more">
+        <item quantity="one">+%d more</item>
+        <item quantity="other">+%d more</item>
+    </plurals>
     <string name="settings_theme">Theme</string>
     <string name="theme_system">System default</string>
     <string name="theme_system_hint">Follows your device setting</string>

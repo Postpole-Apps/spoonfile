@@ -130,6 +130,7 @@ fun AppNavHost(
                 onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                 onOpenPro = { openPro() },
                 onOpenAutoPro = { trigger -> navController.navigate(Routes.pro(trigger)) },
+                onOpenCook = { navController.navigate(Routes.cook(it)) },
             )
         }
         composable(Routes.RECIPE, arguments = idArg) {

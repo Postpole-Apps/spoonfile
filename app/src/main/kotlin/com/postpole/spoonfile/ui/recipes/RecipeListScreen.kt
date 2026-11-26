@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -32,6 +33,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Settings
@@ -69,16 +71,20 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.ui.res.pluralStringResource
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.postpole.spoonfile.BuildConfig
 import com.postpole.spoonfile.R
 import com.postpole.spoonfile.ads.AdBanner
 import com.postpole.spoonfile.analytics.ProPromptDismissMethod
+import com.postpole.spoonfile.analytics.TodayPlanTarget
 import com.postpole.spoonfile.pro.ProPromptTrigger
 import com.postpole.spoonfile.pro.ProPromptViewModel
 import com.postpole.spoonfile.data.CategoryWithCount
@@ -107,9 +113,15 @@ fun RecipeListScreen(
     onOpenPro: () -> Unit,
     /** Opens the Pro screen from an automatic prompt; the argument is the `auto_<trigger>` value. */
     onOpenAutoPro: (String) -> Unit,
+    onOpenCook: (Long) -> Unit = {},
     viewModel: RecipeListViewModel = hiltViewModel(),
     promptViewModel: ProPromptViewModel = hiltViewModel(),
 ) {
+    // Rolls the Today's plan card over to the new day when the app returns to the front.
+    LifecycleResumeEffect(Unit) {
+        viewModel.onResume()
+        onPauseOrDispose { }
+    }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val activePrompt by promptViewModel.active.collectAsStateWithLifecycle()
     val proPrice by promptViewModel.price.collectAsStateWithLifecycle()
@@ -205,6 +217,8 @@ fun RecipeListScreen(
                     onOpenRecipe,
                     onOpenPro,
                     onOpenSettings,
+                    onOpenCook,
+                    onOpenMealPlan,
                     onSeeAll = { showCategories = true },
                     // Never alongside the limit or backup banners.
                     proCard = if (activePrompt == ProPromptTrigger.RECIPES_MILESTONE && !state.atLimit && !state.showBackupNudge) {
@@ -320,6 +334,8 @@ private fun RecipeGrid(
     onOpenRecipe: (Long) -> Unit,
     onOpenPro: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenCook: (Long) -> Unit,
+    onOpenMealPlan: () -> Unit,
     onSeeAll: () -> Unit,
     proCard: ProCardUi?,
 ) {
@@ -348,6 +364,25 @@ private fun RecipeGrid(
                 shape = MaterialTheme.shapes.extraLarge,
                 modifier = Modifier.fillMaxWidth(),
             )
+        }
+        if (state.showTodayPlan) {
+            item(span = full, key = "today-plan") {
+                TodayPlanCard(
+                    items = state.todayPlan,
+                    onOpenRecipe = {
+                        viewModel.onTodayPlanTap(TodayPlanTarget.RECIPE)
+                        onOpenRecipe(it)
+                    },
+                    onCook = {
+                        viewModel.onTodayPlanTap(TodayPlanTarget.COOK)
+                        onOpenCook(it)
+                    },
+                    onSeeWeek = {
+                        viewModel.onTodayPlanTap(TodayPlanTarget.WEEK)
+                        onOpenMealPlan()
+                    },
+                )
+            }
         }
         if (state.atLimit) {
             item(span = full) { LimitBanner(onOpenPro) }
@@ -382,6 +417,67 @@ private fun RecipeGrid(
                 RecipeGridCard(recipe, viewModel) { onOpenRecipe(recipe.id) }
             } else {
                 RecipeRow(recipe, viewModel) { onOpenRecipe(recipe.id) }
+            }
+        }
+    }
+}
+
+private const val TODAY_PLAN_MAX_ITEMS = 3
+
+/** Pro owners' planned recipes for today: up to three rows, "+N more", a Cook button each and "See the week". */
+@Composable
+internal fun TodayPlanCard(
+    items: List<TodayPlanItem>,
+    onOpenRecipe: (Long) -> Unit,
+    onCook: (Long) -> Unit,
+    onSeeWeek: () -> Unit,
+) {
+    Surface(
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                stringResource(R.string.recipes_today_plan_title),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.semantics { heading() },
+            )
+            val openLabel = stringResource(R.string.recipes_today_plan_open_label)
+            items.take(TODAY_PLAN_MAX_ITEMS).forEach { item ->
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp)
+                        .clickable(onClickLabel = openLabel) { onOpenRecipe(item.recipeId) },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        item.title,
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyLarge,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    IconButton(onClick = { onCook(item.recipeId) }, modifier = Modifier.size(48.dp)) {
+                        Icon(
+                            Icons.Filled.PlayArrow,
+                            contentDescription = stringResource(R.string.recipes_today_plan_cook_cd, item.title),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
+            }
+            val more = items.size - TODAY_PLAN_MAX_ITEMS
+            if (more > 0) {
+                Text(
+                    pluralStringResource(R.plurals.recipes_today_plan_more, more, more),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+            TextButton(onClick = onSeeWeek, modifier = Modifier.align(Alignment.End)) {
+                Text(stringResource(R.string.recipes_today_plan_see_week))
             }
         }
     }

@@ -288,6 +288,15 @@
     <string name="categories_delete_message">Die Kategorie wird von deinen Rezepten entfernt. Die Rezepte selbst bleiben erhalten.</string>
     <string name="recipes_backup_nudge">Deine letzte Sicherung ist schon eine Weile her. Speichere eine Kopie deiner Rezepte und Fotos.</string>
     <string name="recipes_backup_nudge_dismiss">Nicht jetzt</string>
+    <!-- Today's plan card (NEEDS NATIVE REVIEW) -->
+    <string name="recipes_today_plan_title">Heute geplant</string>
+    <string name="recipes_today_plan_open_label">Rezept öffnen</string>
+    <string name="recipes_today_plan_cook_cd">Kochmodus für %1$s starten</string>
+    <string name="recipes_today_plan_see_week">Woche ansehen</string>
+    <plurals name="recipes_today_plan_more">
+        <item quantity="one">+%d weiteres</item>
+        <item quantity="other">+%d weitere</item>
+    </plurals>
     <string name="settings_theme">Design</string>
     <string name="theme_system">Systemstandard</string>
     <string name="theme_system_hint">Folgt der Einstellung deines Geräts</string>
